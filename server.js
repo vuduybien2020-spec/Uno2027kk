@@ -1,27 +1,652 @@
-const express=require("express"),http=require("http"),helmet=require("helmet"),{Server}=require("socket.io"),QR=require("qrcode"),crypto=require("crypto"),path=require("path");
-const app=express();app.use(helmet({contentSecurityPolicy:false}));app.use(express.json());app.use(express.static(path.join(__dirname,"public")));
-const srv=http.createServer(app),io=new Server(srv),rooms=new Map(),PORT=process.env.PORT||3000,C=["red","yellow","green","blue"],uid=()=>crypto.randomUUID(),MAX=6;
-const shuffle=a=>{for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
-function newDeck(){let d=[];for(let c of C){d.push({id:uid(),color:c,value:"0"});for(let n=1;n<=9;n++)for(let k=0;k<2;k++)d.push({id:uid(),color:c,value:""+n});for(let v of ["skip","reverse","draw2"])for(let k=0;k<2;k++)d.push({id:uid(),color:c,value:v})}for(let k=0;k<4;k++){d.push({id:uid(),color:"wild",value:"wild"},{id:uid(),color:"wild",value:"draw4"})}return shuffle(d)}
-const get=(r,id)=>r.players.find(p=>p.id===id),ci=r=>r.players.findIndex(p=>p.id===r.turn),ni=(r,i,n=1)=>(i+r.dir*n+r.players.length*2)%r.players.length;
-function draw(r,p,n=1){for(let k=0;k<n;k++){if(!r.deck.length){if(r.discard.length<2)break;let top=r.discard.pop();r.deck=shuffle(r.discard.splice(0));r.discard=[top]}let c=r.deck.pop();if(c)p.hand.push(c)}}
-function advance(r,n=1){let i=ci(r);if(i>=0)r.turn=r.players[ni(r,i,n)].id}
-function state(r){return{code:r.code,status:r.status,players:r.players.map(p=>({id:p.id,name:p.name,avatar:p.avatar,host:p.host,connected:p.connected,count:p.hand.length,saidUno:p.saidUno})),turn:r.turn,dir:r.dir,top:r.discard.at(-1)||null,color:r.color,deckCount:r.deck.length,winner:r.winner,notice:r.notice}}
-const pub=r=>io.to(r.code).emit("room:state",state(r)),hand=p=>io.to(p.id).emit("hand:state",p.hand),err=(s,m)=>s.emit("game:error",m);
-function start(r){if(r.players.length<2)throw Error("Cần ít nhất 2 người.");r.deck=newDeck();r.discard=[];r.dir=1;r.winner=null;r.status="playing";r.players.forEach(p=>{p.hand=[];p.saidUno=false;p.drawnId=null});for(let i=0;i<7;i++)r.players.forEach(p=>draw(r,p));let first=r.deck.pop();while(first.color==="wild"){r.deck.unshift(first);first=r.deck.pop()}r.discard=[first];r.color=first.color;r.turn=r.players[0].id;if(first.value==="skip")advance(r,2);if(first.value==="reverse")r.dir=-1;if(first.value==="draw2"){draw(r,r.players[1],2);r.turn=r.players[1].id;advance(r,1)}r.notice="Ván mới bắt đầu! Chúc may mắn đầu xuân!"}
-app.get("/api/health",(q,s)=>s.json({ok:true,rooms:rooms.size}));
-app.post("/api/room/create",(q,s)=>{let code;do{code=crypto.randomBytes(3).toString("hex").toUpperCase()}while(rooms.has(code));let hostId=uid();rooms.set(code,{code,hostId,players:[{id:hostId,name:String(q.body?.name||"Chủ phòng").slice(0,22),avatar:"👑",host:true,hand:[],connected:false,saidUno:false}],status:"lobby",deck:[],discard:[],dir:1,turn:null,color:null,winner:null,notice:"Mời bạn bè vào phòng!"});s.json({code,hostId})});
-app.get("/api/room/:code/qr",async(q,s)=>{let r=rooms.get(q.params.code.toUpperCase());if(!r)return s.status(404).json({error:"Không có phòng"});let url=`${process.env.PUBLIC_BASE_URL||`${q.protocol}://${q.get("host")}`}/?room=${r.code}`;s.json({url,qr:await QR.toDataURL(url,{width:420,margin:1})});});
-io.on("connection",s=>{
-s.on("room:join",({code,name,hostId}={})=>{let r=rooms.get(String(code||"").toUpperCase());if(!r)return err(s,"Không tìm thấy phòng.");let p;if(hostId===r.hostId)p=get(r,r.hostId);else{if(r.status!=="lobby")return err(s,"Ván đã bắt đầu.");if(r.players.length>=MAX)return err(s,"Phòng đã đủ 6 người.");p={id:s.id,name:String(name||"Khách").trim().slice(0,22)||"Khách",avatar:["🌸","🐐","🧧","🐲","🏮","🌼"][r.players.length],host:false,hand:[],connected:false,saidUno:false}}if(!p)return;p.connected=true;p.socketId=s.id;s.data.code=r.code;s.data.pid=p.id;s.join(r.code);s.join(p.id);s.emit("room:joined",{code:r.code,playerId:p.id,host:p.host});if(r.status!=="lobby")hand(p);pub(r)});
-s.on("game:start",()=>{let r=rooms.get(s.data.code),p=r&&get(r,s.data.pid);if(!p?.host)return err(s,"Chỉ chủ phòng bắt đầu được.");try{start(r);r.players.forEach(hand);pub(r)}catch(e){err(s,e.message)}});
-s.on("card:play",({cardId,color}={})=>{let r=rooms.get(s.data.code),p=r&&get(r,s.data.pid);if(!r||!p)return;if(r.status!=="playing"||r.turn!==p.id)return err(s,"Chưa đến lượt.");let i=p.hand.findIndex(c=>c.id===cardId);if(i<0)return err(s,"Không tìm thấy lá.");let c=p.hand[i],top=r.discard.at(-1);if(!(c.color==="wild"||c.color===r.color||c.value===top.value))return err(s,"Lá bài không hợp lệ.");if(c.value==="draw4"&&p.hand.some(x=>x.color===r.color))return err(s,"Không được đánh +4 khi còn lá cùng màu.");if(c.color==="wild"&&!C.includes(color))return err(s,"Chọn màu cho Wild.");p.hand.splice(i,1);p.saidUno=p.hand.length===1;r.discard.push(c);r.color=c.color==="wild"?color:c.color;if(!p.hand.length){r.status="finished";r.winner=p.id;r.notice=`🎉 ${p.name} chiến thắng!`;r.players.forEach(hand);return pub(r)}let n=1;if(c.value==="skip")n=2;if(c.value==="reverse"){r.dir*=-1;if(r.players.length===2)n=2}if(["draw2","draw4"].includes(c.value)){let t=r.players[ni(r,ci(r))],num=c.value==="draw2"?2:4;draw(r,t,num);hand(t);n=2;r.notice=`${t.name} rút ${num} lá và mất lượt.`}else r.notice=`${p.name} đã đánh ${c.value}.`;advance(r,n);r.players.forEach(hand);pub(r)});
-s.on("card:draw",()=>{let r=rooms.get(s.data.code),p=r&&get(r,s.data.pid);if(!p||r.turn!==p.id||r.status!=="playing")return err(s,"Chưa đến lượt.");if(p.drawnId)return err(s,"Đã rút bài lượt này.");draw(r,p);p.drawnId=p.hand.at(-1)?.id;hand(p);r.notice=`${p.name} rút một lá.`;pub(r)});
-s.on("turn:pass",()=>{let r=rooms.get(s.data.code),p=r&&get(r,s.data.pid);if(!p||r.turn!==p.id||!p.drawnId)return err(s,"Bạn cần rút bài trước.");p.drawnId=null;advance(r);r.notice=`${p.name} kết thúc lượt.`;pub(r)});
-s.on("uno:call",()=>{let r=rooms.get(s.data.code),p=r&&get(r,s.data.pid);if(!p||p.hand.length!==1)return err(s,"Chỉ hô UNO khi còn 1 lá.");p.saidUno=true;r.notice=`${p.name} hô UNO!`;pub(r)});
-s.on("uno:catch",({targetId}={})=>{let r=rooms.get(s.data.code),t=r&&get(r,targetId);if(!t||t.hand.length!==1||t.saidUno||r.turn===t.id)return err(s,"Không thể bắt UNO.");draw(r,t,2);t.saidUno=true;hand(t);r.notice=`${t.name} bị phạt rút 2 lá!`;pub(r)});
-s.on("reaction:send",({emoji}={})=>{let r=rooms.get(s.data.code),p=r&&get(r,s.data.pid);if(!p||!["😂","👍","❤️","😱","👏","😭","🔥","🎉"].includes(emoji))return;if(Date.now()-(s.data.react||0)<700)return;s.data.react=Date.now();io.to(r.code).emit("reaction:show",{playerId:p.id,emoji})});
-s.on("chat:send",({message}={})=>{let r=rooms.get(s.data.code),p=r&&get(r,s.data.pid),m=String(message||"").trim().slice(0,120);if(r&&p&&m)io.to(r.code).emit("chat:message",{name:p.name,message:m})});
-s.on("disconnect",()=>{let r=rooms.get(s.data.code),p=r&&get(r,s.data.pid);if(p&&p.socketId===s.id){p.connected=false;pub(r)}})
+
+const express = require("express");
+const http = require("http");
+const helmet = require("helmet");
+const { Server } = require("socket.io");
+const QRCode = require("qrcode");
+const crypto = require("crypto");
+const path = require("path");
+
+const app = express();
+app.use(helmet({ contentSecurityPolicy: false }));
+app.use(express.json());
+app.use(express.static(path.join(__dirname, "public")));
+
+const server = http.createServer(app);
+const io = new Server(server);
+const PORT = process.env.PORT || 8080;
+const MAX_PLAYERS = 6;
+const COLORS = ["red", "yellow", "green", "blue"];
+const REACTIONS = ["😂", "👍", "❤️", "😱", "👏", "😭", "🔥", "🎉"];
+const rooms = new Map();
+
+const makeId = () => crypto.randomUUID();
+
+function shuffle(items) {
+  const result = [...items];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+function createDeck() {
+  const cards = [];
+
+  for (const color of COLORS) {
+    cards.push({ id: makeId(), color, value: "0" });
+
+    for (let number = 1; number <= 9; number++) {
+      for (let copy = 0; copy < 2; copy++) {
+        cards.push({ id: makeId(), color, value: String(number) });
+      }
+    }
+
+    for (const value of ["skip", "reverse", "draw2"]) {
+      for (let copy = 0; copy < 2; copy++) {
+        cards.push({ id: makeId(), color, value });
+      }
+    }
+  }
+
+  for (let copy = 0; copy < 4; copy++) {
+    cards.push({ id: makeId(), color: "wild", value: "wild" });
+    cards.push({ id: makeId(), color: "wild", value: "draw4" });
+  }
+
+  return shuffle(cards);
+}
+
+function getPlayer(room, playerId) {
+  return room.players.find((player) => player.id === playerId);
+}
+
+function currentIndex(room) {
+  return room.players.findIndex(
+    (player) => player.id === room.currentPlayerId
+  );
+}
+
+function nextIndex(room, index, steps = 1) {
+  return (
+    index +
+    room.direction * steps +
+    room.players.length * 2
+  ) % room.players.length;
+}
+
+function drawCards(room, player, count = 1) {
+  for (let i = 0; i < count; i++) {
+    if (room.deck.length === 0) {
+      if (room.discard.length <= 1) break;
+
+      const topCard = room.discard.pop();
+      room.deck = shuffle(room.discard.splice(0));
+      room.discard = [topCard];
+    }
+
+    const card = room.deck.pop();
+    if (card) player.hand.push(card);
+  }
+}
+
+function advanceTurn(room, steps = 1) {
+  const index = currentIndex(room);
+  if (index < 0 || room.players.length === 0) return;
+
+  room.currentPlayerId =
+    room.players[nextIndex(room, index, steps)].id;
+
+  room.turnNumber += 1;
+}
+
+function publicRoomState(room) {
+  return {
+    code: room.code,
+    status: room.status,
+    players: room.players.map((player) => ({
+      id: player.id,
+      name: player.name,
+      avatar: player.avatar,
+      host: player.host,
+      connected: player.connected,
+      count: player.hand.length,
+      saidUno: player.saidUno
+    })),
+    currentPlayerId: room.currentPlayerId,
+    direction: room.direction,
+    top: room.discard[room.discard.length - 1] || null,
+    activeColor: room.activeColor,
+    deckCount: room.deck.length,
+    winner: room.winner,
+    notice: room.notice,
+    turnNumber: room.turnNumber
+  };
+}
+
+function broadcastRoom(room) {
+  io.to(room.code).emit("room:state", publicRoomState(room));
+}
+
+function sendHand(player) {
+  if (player.socketId) {
+    io.to(player.socketId).emit("hand:state", player.hand);
+  }
+}
+
+function sendError(socket, message) {
+  socket.emit("game:error", message);
+}
+
+function startGame(room) {
+  if (room.players.length < 2) {
+    throw new Error("Cần ít nhất 2 người để bắt đầu.");
+  }
+
+  room.deck = createDeck();
+  room.discard = [];
+  room.direction = 1;
+  room.winner = null;
+  room.status = "playing";
+  room.turnNumber = 1;
+
+  for (const player of room.players) {
+    player.hand = [];
+    player.saidUno = false;
+    player.drawnId = null;
+  }
+
+  for (let cardNo = 0; cardNo < 7; cardNo++) {
+    for (const player of room.players) {
+      drawCards(room, player, 1);
+    }
+  }
+
+  let firstCard = room.deck.pop();
+
+  while (firstCard && firstCard.color === "wild") {
+    room.deck.unshift(firstCard);
+    firstCard = room.deck.pop();
+  }
+
+  room.discard.push(firstCard);
+  room.activeColor = firstCard.color;
+  room.currentPlayerId = room.players[0].id;
+  room.notice = "Ván mới bắt đầu! Chúc mọi người năm mới may mắn!";
+
+  if (firstCard.value === "skip") {
+    advanceTurn(room, 2);
+  } else if (firstCard.value === "reverse") {
+    room.direction = -1;
+  } else if (firstCard.value === "draw2") {
+    const target = room.players[1];
+    drawCards(room, target, 2);
+    room.currentPlayerId = target.id;
+    advanceTurn(room, 1);
+  }
+}
+
+function createRoomCode() {
+  let code;
+
+  do {
+    code = crypto.randomBytes(3).toString("hex").toUpperCase();
+  } while (rooms.has(code));
+
+  return code;
+}
+
+app.get("/api/health", (req, res) => {
+  res.json({ ok: true, rooms: rooms.size });
 });
-app.get("*",(q,s)=>s.sendFile(path.join(__dirname,"public","index.html")));srv.listen(PORT,()=>console.log("UNO TET 2027 "+PORT));
+
+app.post("/api/room/create", (req, res) => {
+  const code = createRoomCode();
+  const hostId = makeId();
+
+  const hostName =
+    String(req.body?.name || "Chủ phòng")
+      .trim()
+      .slice(0, 22) || "Chủ phòng";
+
+  const room = {
+    code,
+    hostId,
+    players: [{
+      id: hostId,
+      name: hostName,
+      avatar: "👑",
+      host: true,
+      hand: [],
+      connected: false,
+      saidUno: false,
+      socketId: null,
+      drawnId: null
+    }],
+    status: "lobby",
+    deck: [],
+    discard: [],
+    direction: 1,
+    currentPlayerId: null,
+    activeColor: null,
+    winner: null,
+    notice: "Mời bạn bè tham gia bàn UNO!",
+    turnNumber: 0
+  };
+
+  rooms.set(code, room);
+  res.json({ code, hostId });
+});
+
+app.get("/api/room/:code/qr", async (req, res) => {
+  try {
+    const room = rooms.get(
+      String(req.params.code || "").toUpperCase()
+    );
+
+    if (!room) {
+      return res.status(404).json({
+        error: "Không tìm thấy phòng."
+      });
+    }
+
+    const baseUrl =
+      process.env.PUBLIC_BASE_URL ||
+      `${req.protocol}://${req.get("host")}`;
+
+    const url = `${baseUrl}/?room=${room.code}`;
+
+    const qr = await QRCode.toDataURL(url, {
+      width: 420,
+      margin: 1
+    });
+
+    return res.json({ url, qr });
+  } catch (error) {
+    console.error("QR generation error:", error);
+
+    return res.status(500).json({
+      error: "Không tạo được mã QR."
+    });
+  }
+});
+
+io.on("connection", (socket) => {
+
+  socket.on("room:join", (payload = {}) => {
+    const code = String(payload.code || "")
+      .trim()
+      .toUpperCase();
+
+    const room = rooms.get(code);
+
+    if (!room) {
+      return sendError(socket, "Không tìm thấy phòng.");
+    }
+
+    let player;
+
+    if (payload.hostId && payload.hostId === room.hostId) {
+      player = getPlayer(room, room.hostId);
+    } else {
+      if (room.status !== "lobby") {
+        return sendError(
+          socket,
+          "Ván đã bắt đầu, không thể tham gia lúc này."
+        );
+      }
+
+      if (room.players.length >= MAX_PLAYERS) {
+        return sendError(socket, "Phòng đã đủ 6 người.");
+      }
+
+      player = {
+        id: socket.id,
+        name: String(payload.name || "Khách")
+          .trim()
+          .slice(0, 22) || "Khách",
+        avatar: ["🌸", "🐐", "🧧", "🐲", "🏮", "🌼"][
+          room.players.length
+        ],
+        host: false,
+        hand: [],
+        connected: false,
+        saidUno: false,
+        socketId: null,
+        drawnId: null
+      };
+
+      room.players.push(player);
+    }
+
+    if (!player) {
+      return sendError(socket, "Không xác định được người chơi.");
+    }
+
+    player.connected = true;
+    player.socketId = socket.id;
+
+    socket.data.roomCode = room.code;
+    socket.data.playerId = player.id;
+
+    socket.join(room.code);
+
+    socket.emit("room:joined", {
+      code: room.code,
+      playerId: player.id,
+      host: player.host
+    });
+
+    if (room.status === "playing") {
+      sendHand(player);
+    }
+
+    broadcastRoom(room);
+  });
+
+  socket.on("game:start", () => {
+    const room = rooms.get(socket.data.roomCode);
+    const player =
+      room && getPlayer(room, socket.data.playerId);
+
+    if (!room || !player || !player.host) {
+      return sendError(
+        socket,
+        "Chỉ chủ phòng mới được bắt đầu."
+      );
+    }
+
+    try {
+      startGame(room);
+      room.players.forEach(sendHand);
+      broadcastRoom(room);
+    } catch (error) {
+      sendError(socket, error.message);
+    }
+  });
+
+  socket.on("card:play", (payload = {}) => {
+    const room = rooms.get(socket.data.roomCode);
+    const player =
+      room && getPlayer(room, socket.data.playerId);
+
+    if (!room || !player) return;
+
+    if (
+      room.status !== "playing" ||
+      room.currentPlayerId !== player.id
+    ) {
+      return sendError(socket, "Chưa đến lượt bạn.");
+    }
+
+    const cardIndex = player.hand.findIndex(
+      (card) => card.id === payload.cardId
+    );
+
+    if (cardIndex < 0) {
+      return sendError(socket, "Không tìm thấy lá bài.");
+    }
+
+    const card = player.hand[cardIndex];
+    const topCard = room.discard[room.discard.length - 1];
+
+    const isPlayable =
+      card.color === "wild" ||
+      card.color === room.activeColor ||
+      card.value === topCard.value;
+
+    if (!isPlayable) {
+      return sendError(socket, "Lá bài không hợp lệ.");
+    }
+
+    if (
+      card.value === "draw4" &&
+      player.hand.some(
+        (item) => item.color === room.activeColor
+      )
+    ) {
+      return sendError(
+        socket,
+        "Không được đánh +4 khi còn lá cùng màu."
+      );
+    }
+
+    if (
+      card.color === "wild" &&
+      !COLORS.includes(payload.color)
+    ) {
+      return sendError(socket, "Hãy chọn màu cho lá Wild.");
+    }
+
+    player.hand.splice(cardIndex, 1);
+    player.drawnId = null;
+    player.saidUno = player.hand.length === 1;
+
+    room.discard.push(card);
+
+    room.activeColor =
+      card.color === "wild" ? payload.color : card.color;
+
+    if (player.hand.length === 0) {
+      room.status = "finished";
+      room.winner = player.id;
+      room.notice = `🎉 ${player.name} chiến thắng!`;
+
+      room.players.forEach(sendHand);
+      return broadcastRoom(room);
+    }
+
+    let steps = 1;
+
+    if (card.value === "skip") {
+      steps = 2;
+    }
+
+    if (card.value === "reverse") {
+      room.direction *= -1;
+
+      if (room.players.length === 2) {
+        steps = 2;
+      }
+    }
+
+    if (
+      card.value === "draw2" ||
+      card.value === "draw4"
+    ) {
+      const target =
+        room.players[nextIndex(room, currentIndex(room))];
+
+      const penalty = card.value === "draw2" ? 2 : 4;
+
+      drawCards(room, target, penalty);
+      sendHand(target);
+
+      steps = 2;
+      room.notice =
+        `${target.name} rút ${penalty} lá và mất lượt.`;
+    } else {
+      room.notice = `${player.name} đã đánh ${card.value}.`;
+    }
+
+    advanceTurn(room, steps);
+
+    room.players.forEach(sendHand);
+    broadcastRoom(room);
+  });
+
+  socket.on("card:draw", () => {
+    const room = rooms.get(socket.data.roomCode);
+    const player =
+      room && getPlayer(room, socket.data.playerId);
+
+    if (!room || !player) return;
+
+    if (
+      room.status !== "playing" ||
+      room.currentPlayerId !== player.id
+    ) {
+      return sendError(socket, "Chưa đến lượt bạn.");
+    }
+
+    if (player.drawnId) {
+      return sendError(
+        socket,
+        "Bạn đã rút bài trong lượt này."
+      );
+    }
+
+    drawCards(room, player, 1);
+
+    player.drawnId =
+      player.hand[player.hand.length - 1]?.id || null;
+
+    sendHand(player);
+
+    room.notice = `${player.name} đã rút một lá.`;
+    broadcastRoom(room);
+  });
+
+  socket.on("turn:pass", () => {
+    const room = rooms.get(socket.data.roomCode);
+    const player =
+      room && getPlayer(room, socket.data.playerId);
+
+    if (!room || !player) return;
+
+    if (
+      room.status !== "playing" ||
+      room.currentPlayerId !== player.id ||
+      !player.drawnId
+    ) {
+      return sendError(
+        socket,
+        "Bạn cần rút bài trước khi bỏ lượt."
+      );
+    }
+
+    player.drawnId = null;
+
+    advanceTurn(room);
+
+    room.notice = `${player.name} kết thúc lượt.`;
+    broadcastRoom(room);
+  });
+
+  socket.on("uno:call", () => {
+    const room = rooms.get(socket.data.roomCode);
+    const player =
+      room && getPlayer(room, socket.data.playerId);
+
+    if (!room || !player || player.hand.length !== 1) {
+      return sendError(
+        socket,
+        "Chỉ hô UNO khi còn đúng 1 lá."
+      );
+    }
+
+    player.saidUno = true;
+    room.notice = `${player.name} hô UNO!`;
+
+    broadcastRoom(room);
+  });
+
+  socket.on("uno:catch", (payload = {}) => {
+    const room = rooms.get(socket.data.roomCode);
+    const target =
+      room && getPlayer(room, payload.targetId);
+
+    if (
+      !room ||
+      !target ||
+      target.hand.length !== 1 ||
+      target.saidUno
+    ) {
+      return sendError(
+        socket,
+        "Không thể bắt UNO người chơi này."
+      );
+    }
+
+    if (room.currentPlayerId === target.id) {
+      return sendError(
+        socket,
+        "Không thể bắt UNO khi người đó đang tới lượt."
+      );
+    }
+
+    drawCards(room, target, 2);
+    target.saidUno = true;
+
+    sendHand(target);
+
+    room.notice = `${target.name} bị phạt rút 2 lá!`;
+    broadcastRoom(room);
+  });
+
+  socket.on("reaction:send", (payload = {}) => {
+    const room = rooms.get(socket.data.roomCode);
+    const player =
+      room && getPlayer(room, socket.data.playerId);
+
+    const emoji = payload.emoji;
+
+    if (!room || !player || !REACTIONS.includes(emoji)) {
+      return;
+    }
+
+    const now = Date.now();
+
+    if (now - (socket.data.lastReactionAt || 0) < 700) {
+      return;
+    }
+
+    socket.data.lastReactionAt = now;
+
+    io.to(room.code).emit("reaction:show", {
+      playerId: player.id,
+      emoji
+    });
+  });
+
+  socket.on("chat:send", (payload = {}) => {
+    const room = rooms.get(socket.data.roomCode);
+    const player =
+      room && getPlayer(room, socket.data.playerId);
+
+    const message = String(payload.message || "")
+      .trim()
+      .slice(0, 120);
+
+    if (!room || !player || !message) return;
+
+    io.to(room.code).emit("chat:message", {
+      name: player.name,
+      message
+    });
+  });
+
+  socket.on("disconnect", () => {
+    const room = rooms.get(socket.data.roomCode);
+    const player =
+      room && getPlayer(room, socket.data.playerId);
+
+    if (player && player.socketId === socket.id) {
+      player.connected = false;
+      player.socketId = null;
+      broadcastRoom(room);
+    }
+  });
+
+});
+
+app.get("*", (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "public", "index.html")
+  );
+});
+
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`UNO TET 2027 listening on port ${PORT}`);
+});
