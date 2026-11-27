@@ -209,3 +209,28 @@ body{background:#650d20 url('/assets/tet-background-clean.png') center top/cover
 .playing-card.value-skip:after{content:"🌸"}.playing-card.value-reverse:after{content:"🏮"}.playing-card.value-draw2:after{content:"🎁"}.playing-card.value-wild:after{content:"✨"}.playing-card.value-draw4:after{content:"🎴"}
 .playing-card:focus-visible{outline:3px solid #ffe66e;outline-offset:3px}
 @media(max-width:700px) and (orientation:portrait){.playing-card{border-radius:12px!important}.playing-card:before,.playing-card:after{font-size:10px}}
+
+
+/* UNO Tết image faces — use the supplied card PNGs on the hand and discard pile. */
+.playing-card.has-art{
+  padding:0!important;
+  border:0!important;
+  outline:0!important;
+  background:transparent!important;
+  box-shadow:0 5px 0 #b9b3a8,0 9px 14px #16030bcc!important;
+  text-shadow:none!important;
+  -webkit-text-stroke:0!important;
+  overflow:hidden!important;
+}
+.playing-card.has-art:before,.playing-card.has-art:after{display:none!important;content:none!important}
+.playing-card .card-art{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:fill;
+  border:0;
+  border-radius:inherit;
+  pointer-events:none;
+  user-select:none;
+  -webkit-user-drag:none;
+}
