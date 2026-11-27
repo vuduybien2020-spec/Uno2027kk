@@ -61,3 +61,10 @@ Kiểm tra đã chạy: kiểm tra cú pháp JavaScript Node cho server và app.
 
 ### Giới hạn kiểm thử
 Đã kiểm tra cú pháp JavaScript và đối chiếu các ID HTML/tài nguyên ảnh. Chưa chạy kiểm thử đa thiết bị thực tế hoặc mô phỏng toàn bộ ván qua trình duyệt; cần thử bằng ít nhất hai điện thoại sau khi Railway triển khai.
+
+
+## V12 – sửa lỗi bài và xác nhận tham gia
+- Bổ sung đủ 54 mặt bài UNO 3D đồng bộ, không còn fallback nền phẳng cho các lá hợp lệ.
+- Mỗi khách quét QR phải tự nhập tên, chọn giới tính/chibi và bấm Vào phòng; không tự tham gia khi Socket.IO vừa kết nối.
+- Không tự điền tên cũ từ phiên trình duyệt; vẫn giữ lựa chọn giới tính/chibi để thao tác nhanh.
+- Khi đã vào thành công, tự kết nối lại sẽ khôi phục phiên chơi hiện tại.
