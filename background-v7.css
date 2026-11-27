@@ -1,0 +1,7 @@
+/* Dán toàn bộ đoạn này vào CUỐI public/style.css hiện tại */
+html,body{min-height:100%;background-color:#650d20}
+body{background-image:linear-gradient(180deg,rgba(48,3,15,.10),rgba(48,3,15,.22)),url('/assets/tet-background-clean.png?v=7');background-position:center top;background-repeat:no-repeat;background-size:100% 100%;background-attachment:fixed}
+body:before,body:after{content:none!important;display:none!important}
+.lobby,.game{background:transparent!important}
+.topbar{background:linear-gradient(90deg,rgba(49,4,17,.94),rgba(112,10,37,.90),rgba(49,4,17,.94))}
+@media (max-width:700px) and (orientation:portrait){body{background-size:cover;background-position:center top}.game{min-height:calc(100dvh - 58px);padding:7px}}
