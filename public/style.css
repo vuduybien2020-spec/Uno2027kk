@@ -116,3 +116,80 @@ body{background:#650d20 url('/assets/tet-background-clean.png') center top/cover
  .reactions button{font-size:21px;min-width:36px;min-height:36px}
  .chat-fab{right:10px;bottom:10px;width:48px;height:48px}
 }
+
+
+/* V9 — glossy 3D Tết card treatment */
+.playing-card{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  border:4px solid #f6d36d!important;
+  border-radius:15px!important;
+  box-shadow:
+    inset 0 0 0 2px #fff4c8,
+    inset 0 0 0 5px #b77a24,
+    inset 0 10px 14px #ffffff55,
+    inset 0 -12px 16px #18030b55,
+    0 5px 0 #8e551d,
+    0 9px 0 #5a3219,
+    0 13px 18px #16030bcc!important;
+  text-shadow:0 2px 0 #777,0 4px 5px #16030bcc;
+  transform-style:preserve-3d;
+  transition:transform .16s ease,filter .16s ease;
+  font-weight:900!important;
+  -webkit-text-stroke:.35px #ffffff88;
+}
+.playing-card:before,.playing-card:after{
+  content:"✿";
+  position:absolute;
+  z-index:0;
+  pointer-events:none;
+  color:#ffe36b;
+  font-family:serif;
+  font-size:clamp(11px,1.5vw,19px);
+  line-height:1;
+  filter:drop-shadow(0 2px 1px #7c310b);
+  text-shadow:0 0 4px #fff1a6;
+}
+.playing-card:before{top:3px;left:5px}
+.playing-card:after{right:5px;bottom:3px;color:#ffca38}
+.playing-card.red{
+  background:linear-gradient(145deg,#ff8b83 0%,#f52d3c 24%,#c90b28 72%,#7d071e 100%)!important;
+  color:#fff!important;
+}
+.playing-card.yellow{
+  background:linear-gradient(145deg,#fff5a1 0%,#ffdc36 28%,#e9a900 76%,#a85b08 100%)!important;
+  color:#5a2600!important;
+  text-shadow:0 2px 0 #fff1a6,0 4px 5px #74400099;
+}
+.playing-card.green{
+  background:linear-gradient(145deg,#8dffb1 0%,#20bd67 28%,#078345 76%,#034b31 100%)!important;
+  color:#fff!important;
+}
+.playing-card.blue{
+  background:linear-gradient(145deg,#9de4ff 0%,#238eea 28%,#075bb7 76%,#07336e 100%)!important;
+  color:#fff!important;
+}
+.playing-card.wild{
+  background:conic-gradient(from 35deg at 50% 50%,#ed2437 0 25%,#ffda28 0 50%,#16a65c 0 75%,#167ce0 0 100%)!important;
+  color:#fff!important;
+  text-shadow:0 2px 0 #333,0 4px 6px #111;
+}
+.hand-card{flex-shrink:0}
+.hand-card:active{filter:brightness(1.12) saturate(1.12);transform:translateY(-8px) rotate(-1deg)!important}
+.table-center>.piles .playing-card{border-width:5px!important;border-radius:17px!important}
+.deck-card{
+  border:5px solid #f6d36d!important;
+  border-radius:16px!important;
+  background:
+    linear-gradient(145deg,transparent 0 43%,#f7d45b 44% 47%,transparent 48%),
+    linear-gradient(35deg,#3c0618 0 22%,#a20d2d 23% 48%,#e52b43 49% 70%,#65091f 71%)!important;
+  color:#ffe16c!important;
+  text-shadow:0 3px 0 #6c250e,0 5px 8px #12020a!important;
+  box-shadow:inset 0 0 0 2px #fff2ba,inset 0 0 18px #ffda7a66,0 6px 0 #8e551d,0 10px 0 #542c17,0 14px 18px #16030bcc!important;
+}
+@media(max-width:700px) and (orientation:portrait){
+ .hand-card{border-width:3px!important;border-radius:10px!important}
+ .hand-card:before,.hand-card:after{font-size:10px}
+ .table-center>.piles .playing-card{border-width:4px!important}
+}
