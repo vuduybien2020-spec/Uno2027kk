@@ -27,3 +27,17 @@ body:before,body:after{content:'🌸　🏮　✿　🌼';position:fixed;z-index
 .avatar-img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}.seat .avatar-wrap{overflow:visible}.seat .avatar-img{border-radius:50%;border:2px solid #ffe5a0;box-shadow:inset 0 0 0 2px #7a1729}.action.catch{background:linear-gradient(#e4a12c,#9b4d13);border-color:#ffe18a}.seat.active .seat-name{background:linear-gradient(#b32642,#641026);box-shadow:0 0 12px #ffe56c}
 @media(max-width:700px){.avatar-img{object-fit:cover}.controls{flex-wrap:wrap}.action.catch{padding:8px 9px;font-size:10px}}
 @media(orientation:landscape) and (max-height:560px){.seat.p6{left:12%;bottom:0}}
+
+/* Player poke interaction */
+.seat{z-index:3}
+.poke-btn{display:block;margin:4px auto 0;padding:3px 9px;border:1px solid #ffe08a;border-radius:999px;background:linear-gradient(180deg,#ffdf75,#d88c21);color:#571126;font:800 10px 'Baloo 2',sans-serif;box-shadow:0 2px 0 #7b3515;white-space:nowrap;touch-action:manipulation}
+.poke-btn:active{transform:translateY(2px);box-shadow:0 0 0 #7b3515}
+.poke-btn:disabled{opacity:.38;filter:grayscale(1);cursor:not-allowed}
+.seat.is-poked .avatar-wrap{animation:poke-wiggle .62s ease;}
+.seat.is-poked .avatar-wrap:after{content:'✨';position:absolute;right:-12px;top:-14px;font-size:25px;animation:poke-spark .62s ease}
+@keyframes poke-wiggle{0%,100%{transform:rotate(0) scale(1)}18%{transform:rotate(-9deg) scale(1.08)}38%{transform:rotate(9deg) scale(1.08)}58%{transform:rotate(-6deg)}78%{transform:rotate(5deg)}}
+@keyframes poke-spark{0%{opacity:0;transform:scale(.3) rotate(-30deg)}35%{opacity:1;transform:scale(1.25) rotate(12deg)}100%{opacity:0;transform:scale(.7) translateY(-12px)}}
+@media(max-width:700px){.poke-btn{font-size:9px;padding:2px 7px;margin-top:3px}}
+
+/* Tet art + audio controls */
+body{background:#650d20 url('/assets/tet-background.png') center top/cover fixed no-repeat}.head-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}.sound-toggle{border:1px solid #f4d16c;border-radius:22px;background:#5a1026;color:#ffe9a6;padding:8px 11px;font-weight:800;font-size:11px}.seat.active .avatar-wrap{animation:turnGlow 1.25s ease-in-out infinite alternate}.seat.active:after{content:'ĐẾN LƯỢT';display:block;margin-top:3px;color:#ffe45b;font-size:10px;font-weight:900;text-shadow:0 1px 5px #5a1800}@keyframes turnGlow{from{box-shadow:0 0 0 3px #ffe45b,0 0 10px #ffe45b}to{box-shadow:0 0 0 7px #ffe45b,0 0 28px 8px #ffb900}}.table-area{background:radial-gradient(ellipse,#078451,#034b32);border-color:#c68b39;box-shadow:inset 0 0 0 5px #f4d16c,inset 0 0 50px #002b1d,0 12px 30px #16030a}.avatar-img{object-fit:cover}.seat.is-poked .avatar-wrap{animation:poked .55s ease}@keyframes poked{0%,100%{transform:rotate(0)}25%{transform:rotate(-14deg) scale(1.12)}55%{transform:rotate(14deg) scale(1.12)}}@media(max-width:700px){.head-tools{gap:4px}.sound-toggle{font-size:9px;padding:6px 7px}}
