@@ -193,3 +193,6 @@ body{background:#650d20 url('/assets/tet-background-clean.png') center top/cover
  .hand-card:before,.hand-card:after{font-size:10px}
  .table-center>.piles .playing-card{border-width:4px!important}
 }
+
+/* Nút bắt đầu ván dành riêng cho chủ phòng */
+.start-game{display:block;margin:12px auto 0;min-width:210px;padding:12px 18px;font-weight:900;cursor:pointer}.start-game:disabled{opacity:.45;filter:grayscale(.35);cursor:not-allowed}
