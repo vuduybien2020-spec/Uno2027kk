@@ -1,17 +1,1 @@
-{
-  "name": "uno-tet-2027",
-  "version": "1.1.0",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "express": "^4.21.2",
-    "socket.io": "^4.8.1",
-    "helmet": "^8.0.0",
-    "qrcode": "^1.5.4"
-  },
-  "engines": {
-    "node": ">=18"
-  }
-}
+{"name":"uno-tet-2027","version":"1.0.0","private":true,"main":"server.js","scripts":{"start":"node server.js"},"engines":{"node":">=20"},"dependencies":{"express":"^4.21.2","socket.io":"^4.8.1","qrcode":"^1.5.4","pg":"^8.13.1"}}
