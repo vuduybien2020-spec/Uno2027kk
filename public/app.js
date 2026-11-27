@@ -179,6 +179,12 @@ socket.on("room:state", (state) => {
 function renderRoom() {
   if (!room) return;
 
+  if ($("roomCodeLabel")) $("roomCodeLabel").textContent = " · " + room.code;
+  if ($("onlineCount")) {
+    const online = room.players.filter((player) => player.connected).length;
+    $("onlineCount").textContent = online + "/6";
+  }
+
   $("players").innerHTML = "";
 
   room.players.forEach((player) => {
@@ -193,8 +199,11 @@ function renderRoom() {
     seat.dataset.pid = player.id;
 
     seat.innerHTML = `
-      <div class="avatar">
-        ${escapeHTML(player.avatar || "👤")}
+      <div class="avatar-wrap">
+        <div class="avatar">
+          ${escapeHTML(player.avatar || "👤")}
+        </div>
+        <div class="win-badge" title="Số ván thắng">🏆 ${Number(player.wins) || 0}</div>
       </div>
 
       <div class="pname">
@@ -223,6 +232,16 @@ function renderRoom() {
         : "Lượt của: " + (current?.name || "—");
 
   $("notice").textContent = room.notice || "";
+  const winnerBanner = $("winnerBanner");
+  if (winnerBanner) {
+    if (room.status === "finished") {
+      const winner = room.players.find((player) => player.id === room.winner);
+      winnerBanner.textContent = "🏆 " + (winner?.name || "Người chơi") + " CHIẾN THẮNG! 🏆";
+      winnerBanner.classList.remove("hidden");
+    } else {
+      winnerBanner.classList.add("hidden");
+    }
+  }
 
   $("deckCount").textContent =
     "Bộ rút: " + room.deckCount;
@@ -238,8 +257,10 @@ function renderRoom() {
       labels[room.top.value] || room.top.value;
   }
 
-  if (isHost && room.status === "lobby") {
+  if (isHost && ["lobby", "finished"].includes(room.status)) {
     $("start").classList.remove("hidden");
+    $("start").textContent =
+      room.status === "finished" ? "CHƠI VÁN MỚI" : "BẮT ĐẦU VÁN";
   } else {
     $("start").classList.add("hidden");
   }
@@ -248,6 +269,7 @@ function renderRoom() {
 // Hiển thị bài trên tay người chơi.
 function renderHand() {
   $("hand").innerHTML = "";
+  if ($("handCount")) $("handCount").textContent = "(" + myHand.length + ")";
 
   myHand.forEach((card) => {
     const button = document.createElement("button");
@@ -300,8 +322,8 @@ $("start").addEventListener("click", () => {
     return toast("Chỉ chủ phòng mới được bắt đầu.");
   }
 
-  if (!room || room.status !== "lobby") {
-    return toast("Phòng chưa sẵn sàng.");
+  if (!room || !["lobby", "finished"].includes(room.status)) {
+    return toast("Ván hiện tại chưa kết thúc.");
   }
 
   socket.emit("game:start");
@@ -408,6 +430,28 @@ socket.on("chat:message", (data) => {
 
   $("messages").scrollTop =
     $("messages").scrollHeight;
+
+  // Hiện bong bóng tin nhắn ngay phía trên avatar người gửi.
+  const seat = Array.from($("players").children).find(
+    (element) => element.dataset.pid === data.playerId
+  );
+
+  if (seat) {
+    const oldBubble = seat.querySelector(".chat-bubble");
+    if (oldBubble) oldBubble.remove();
+    clearTimeout(seat.chatBubbleTimer);
+
+    const bubble = document.createElement("div");
+    bubble.className = "chat-bubble";
+    bubble.textContent = data.message;
+    bubble.setAttribute("aria-label", "Tin nhắn của " + data.name);
+    seat.appendChild(bubble);
+
+    seat.chatBubbleTimer = setTimeout(() => {
+      bubble.classList.add("chat-bubble-hide");
+      setTimeout(() => bubble.remove(), 250);
+    }, 4000);
+  }
 });
 
 // Báo lỗi kết nối.
