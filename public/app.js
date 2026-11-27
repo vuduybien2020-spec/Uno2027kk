@@ -8,6 +8,7 @@ let isHost = false;
 let room = null;
 let myHand = [];
 let joined = false;
+let joinRequested = false;
 
 const query = new URLSearchParams(location.search);
 const roomFromUrl = query.get("room");
@@ -30,12 +31,17 @@ const labels = {
 
 function toast(message) {
   const box = $("toast");
-  if (!box) return alert(message);
+
+  if (!box) {
+    alert(message);
+    return;
+  }
 
   box.textContent = message;
   box.style.display = "block";
 
   clearTimeout(toast.timer);
+
   toast.timer = setTimeout(() => {
     box.style.display = "none";
   }, 3000);
@@ -51,8 +57,9 @@ function escapeHTML(value) {
   })[char]);
 }
 
-function joinRoom() {
-  if (joined) return;
+// Gửi yêu cầu vào phòng sau khi Socket.IO đã kết nối.
+function emitJoin() {
+  if (!joinRequested || joined || !socket.connected) return;
 
   const code = roomFromUrl || $("code").value.trim();
   const hostId = hostIdFromUrl;
@@ -63,6 +70,7 @@ function joinRoom() {
 
   if (!code) {
     toast("Anh hãy nhập mã phòng.");
+    joinRequested = false;
     return;
   }
 
@@ -73,43 +81,92 @@ function joinRoom() {
   });
 }
 
+// Người chơi bấm nút vào phòng.
+function joinRoom() {
+  if (joined || joinRequested) return;
+
+  const code = roomFromUrl || $("code").value.trim();
+
+  if (!code) {
+    toast("Anh hãy nhập mã phòng.");
+    return;
+  }
+
+  joinRequested = true;
+  emitJoin();
+
+  if (!socket.connected) {
+    toast("Đang kết nối máy chủ...");
+  }
+}
+
 $("join").addEventListener("click", joinRoom);
 
-// Tự vào phòng khi chủ phòng được chuyển từ Admin sang bàn chơi.
+// Khi Socket.IO kết nối hoặc kết nối lại.
+socket.on("connect", () => {
+  if (joinRequested && !joined) {
+    emitJoin();
+  }
+});
+
+// Khi mất kết nối, cho phép kết nối lại và vào phòng lần nữa.
+socket.on("disconnect", () => {
+  joined = false;
+});
+
+// Tự động điền thông tin khi mở link phòng.
 if (roomFromUrl) {
   $("code").value = roomFromUrl;
 
   if (hostIdFromUrl) {
     $("name").value = "Chủ phòng";
-    joinRoom();
+    joinRequested = true;
+
+    // Nếu máy chủ đã kết nối thì vào ngay.
+    // Nếu chưa, sự kiện connect sẽ tự gửi yêu cầu.
+    emitJoin();
   }
 }
 
+// Máy chủ xác nhận đã vào phòng.
 socket.on("room:joined", (data) => {
   joined = true;
+  joinRequested = true;
+
   me = data.playerId;
-  isHost = data.host;
+  isHost = data.host === true;
 
   $("lobby").classList.add("hidden");
   $("table").classList.remove("hidden");
 
   if (isHost) {
     $("start").classList.remove("hidden");
+    toast("👑 Chủ phòng đã vào bàn chơi!");
+  } else {
+    $("start").classList.add("hidden");
+    toast("Bạn đã vào phòng thành công!");
   }
-
-  toast(isHost
-    ? "Chủ phòng đã vào bàn chơi!"
-    : "Bạn đã vào phòng thành công!");
 });
 
+// Lỗi từ máy chủ.
 socket.on("game:error", (message) => {
   toast(message);
+
+  // Cho phép thử vào lại nếu yêu cầu vào phòng bị từ chối.
+  if (!joined) {
+    joinRequested = false;
+  }
 });
 
 // Nhận bài riêng của người chơi từ máy chủ.
 socket.on("hand:state", (hand) => {
   myHand = Array.isArray(hand) ? hand : [];
+
   renderHand();
+
+  if (isHost && myHand.length > 0) {
+    toast("🧧 Chủ phòng đã nhận " + myHand.length + " lá bài!");
+  }
 });
 
 // Nhận trạng thái bàn chơi.
@@ -118,6 +175,7 @@ socket.on("room:state", (state) => {
   renderRoom();
 });
 
+// Hiển thị thông tin bàn chơi.
 function renderRoom() {
   if (!room) return;
 
@@ -127,6 +185,7 @@ function renderRoom() {
     const seat = document.createElement("div");
 
     seat.className = "seat";
+
     if (player.id === room.currentPlayerId) {
       seat.classList.add("active");
     }
@@ -134,11 +193,15 @@ function renderRoom() {
     seat.dataset.pid = player.id;
 
     seat.innerHTML = `
-      <div class="avatar">${escapeHTML(player.avatar || "👤")}</div>
+      <div class="avatar">
+        ${escapeHTML(player.avatar || "👤")}
+      </div>
+
       <div class="pname">
         ${escapeHTML(player.name)}
         ${player.host ? "👑" : ""}
       </div>
+
       <div class="count">
         ${player.count} lá ·
         ${player.connected ? "Online" : "Offline"}
@@ -160,11 +223,17 @@ function renderRoom() {
         : "Lượt của: " + (current?.name || "—");
 
   $("notice").textContent = room.notice || "";
-  $("deckCount").textContent = "Bộ rút: " + room.deckCount;
-  $("activeColor").textContent = colors[room.activeColor] || "-";
+
+  $("deckCount").textContent =
+    "Bộ rút: " + room.deckCount;
+
+  $("activeColor").textContent =
+    colors[room.activeColor] || "-";
 
   if (room.top) {
-    $("topCard").className = "bigcard " + room.top.color;
+    $("topCard").className =
+      "bigcard " + room.top.color;
+
     $("topCard").textContent =
       labels[room.top.value] || room.top.value;
   }
@@ -176,6 +245,7 @@ function renderRoom() {
   }
 }
 
+// Hiển thị bài trên tay người chơi.
 function renderHand() {
   $("hand").innerHTML = "";
 
@@ -184,7 +254,8 @@ function renderHand() {
 
     button.type = "button";
     button.className = "card " + card.color;
-    button.textContent = labels[card.value] || card.value;
+    button.textContent =
+      labels[card.value] || card.value;
 
     button.addEventListener("click", () => {
       playCard(card);
@@ -194,6 +265,7 @@ function renderHand() {
   });
 }
 
+// Đánh bài.
 function playCard(card) {
   if (!room || room.status !== "playing") {
     return toast("Ván chơi chưa bắt đầu.");
@@ -222,26 +294,35 @@ function playCard(card) {
   });
 }
 
-// Nút bắt đầu ván dành cho chủ phòng.
+// Chủ phòng bắt đầu ván.
 $("start").addEventListener("click", () => {
-  if (!isHost) return toast("Chỉ chủ phòng mới được bắt đầu.");
+  if (!isHost) {
+    return toast("Chỉ chủ phòng mới được bắt đầu.");
+  }
+
+  if (!room || room.status !== "lobby") {
+    return toast("Phòng chưa sẵn sàng.");
+  }
 
   socket.emit("game:start");
 });
 
-// Các nút chơi bài.
+// Rút bài.
 $("draw").addEventListener("click", () => {
   socket.emit("card:draw");
 });
 
+// Bỏ lượt.
 $("pass").addEventListener("click", () => {
   socket.emit("turn:pass");
 });
 
+// Báo UNO.
 $("uno").addEventListener("click", () => {
   socket.emit("uno:call");
 });
 
+// Bắt người chưa báo UNO.
 $("catch").addEventListener("click", () => {
   if (!room) return;
 
@@ -262,57 +343,74 @@ $("catch").addEventListener("click", () => {
 });
 
 // Biểu tượng cảm xúc.
-const emojis = ["😂", "👍", "❤️", "😱", "👏", "😭", "🔥", "🎉"];
+const emojis = [
+  "😂", "👍", "❤️", "😱",
+  "👏", "😭", "🔥", "🎉"
+];
 
 $("emojis").innerHTML = emojis.map(
   (emoji) => `<button type="button">${emoji}</button>`
 ).join("");
 
-Array.from($("emojis").children).forEach((button, index) => {
-  button.addEventListener("click", () => {
-    socket.emit("reaction:send", {
-      emoji: emojis[index]
+Array.from($("emojis").children).forEach(
+  (button, index) => {
+    button.addEventListener("click", () => {
+      socket.emit("reaction:send", {
+        emoji: emojis[index]
+      });
     });
-  });
-});
+  }
+);
 
-// Hiển thị cảm xúc trên vị trí người chơi.
+// Hiển thị cảm xúc tại vị trí người chơi.
 socket.on("reaction:show", (data) => {
   const seat = Array.from(
     $("players").children
-  ).find((element) => element.dataset.pid === data.playerId);
+  ).find(
+    (element) => element.dataset.pid === data.playerId
+  );
 
   if (!seat) return;
 
   const floating = document.createElement("span");
+
   floating.className = "float";
   floating.textContent = data.emoji;
 
   seat.appendChild(floating);
 
-  setTimeout(() => floating.remove(), 2000);
+  setTimeout(() => {
+    floating.remove();
+  }, 2000);
 });
 
-// Chat.
+// Gửi tin nhắn chat.
 $("chatForm").addEventListener("submit", (event) => {
   event.preventDefault();
 
   const message = $("chatInput").value.trim();
+
   if (!message) return;
 
   socket.emit("chat:send", { message });
+
   $("chatInput").value = "";
 });
 
+// Nhận tin nhắn chat.
 socket.on("chat:message", (data) => {
   const item = document.createElement("div");
 
-  item.textContent = data.name + ": " + data.message;
+  item.textContent =
+    data.name + ": " + data.message;
 
   $("messages").appendChild(item);
-  $("messages").scrollTop = $("messages").scrollHeight;
+
+  $("messages").scrollTop =
+    $("messages").scrollHeight;
 });
 
+// Báo lỗi kết nối.
 socket.on("connect_error", () => {
-  toast("Không kết nối được máy chủ. Hãy tải lại trang.");
+  toast("Không kết nối được máy chủ. Hãy kiểm tra mạng và tải lại trang.");
 });
