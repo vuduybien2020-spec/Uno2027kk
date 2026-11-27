@@ -41,3 +41,11 @@ body:before,body:after{content:'🌸　🏮　✿　🌼';position:fixed;z-index
 
 /* Tet art + audio controls */
 body{background:#650d20 url('/assets/tet-background.png') center top/cover fixed no-repeat}.head-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}.sound-toggle{border:1px solid #f4d16c;border-radius:22px;background:#5a1026;color:#ffe9a6;padding:8px 11px;font-weight:800;font-size:11px}.seat.active .avatar-wrap{animation:turnGlow 1.25s ease-in-out infinite alternate}.seat.active:after{content:'ĐẾN LƯỢT';display:block;margin-top:3px;color:#ffe45b;font-size:10px;font-weight:900;text-shadow:0 1px 5px #5a1800}@keyframes turnGlow{from{box-shadow:0 0 0 3px #ffe45b,0 0 10px #ffe45b}to{box-shadow:0 0 0 7px #ffe45b,0 0 28px 8px #ffb900}}.table-area{background:radial-gradient(ellipse,#078451,#034b32);border-color:#c68b39;box-shadow:inset 0 0 0 5px #f4d16c,inset 0 0 50px #002b1d,0 12px 30px #16030a}.avatar-img{object-fit:cover}.seat.is-poked .avatar-wrap{animation:poked .55s ease}@keyframes poked{0%,100%{transform:rotate(0)}25%{transform:rotate(-14deg) scale(1.12)}55%{transform:rotate(14deg) scale(1.12)}}@media(max-width:700px){.head-tools{gap:4px}.sound-toggle{font-size:9px;padding:6px 7px}}
+
+
+/* V6: force Tet artwork background and prevent old cached/opaque surfaces */
+html{min-height:100%;background:#650d20}
+body{min-height:100vh;background-color:#650d20;background-image:linear-gradient(180deg,rgba(62,4,20,.28),rgba(62,4,20,.48)),url('/assets/tet-background.png?v=6');background-repeat:no-repeat;background-position:center center;background-size:cover;background-attachment:fixed}
+.lobby,.game{background:transparent!important}
+.topbar{background:linear-gradient(90deg,rgba(49,4,17,.94),rgba(112,10,37,.92),rgba(49,4,17,.94))}
+.panel{box-shadow:0 12px 35px rgba(23,3,10,.58),0 0 0 1px rgba(255,226,138,.35)}
