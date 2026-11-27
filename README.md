@@ -17,3 +17,16 @@
 5. Generate a public domain and verify `/api/health` returns `database: true`.
 
 Room state is held in process memory; a server restart closes active rooms. Win totals persist in PostgreSQL. Test on two or more phones before public use.
+
+
+## Tính năng chọc người chơi (mới)
+- Mỗi avatar có nút 👉 CHỌC; không thể tự chọc chính mình.
+- Chọc một người chơi sẽ phát hiệu ứng bong bóng và rung avatar cho toàn bộ người trong phòng.
+- Máy chủ giới hạn mỗi người gửi một lần chọc mỗi 2 giây để tránh spam.
+
+
+## Hình ảnh và âm thanh V4
+- Nền Tết: `public/assets/tet-background.png` đã được đóng gói sẵn.
+- Ảnh avatar: các PNG trong `public/assets/`.
+- Nhạc xuân và hiệu ứng âm thanh được tạo trực tiếp bằng Web Audio API, không cần tải MP3 hoặc dùng nhạc có bản quyền. Người chơi cần chạm nút bật nhạc một lần trên Android để cho phép phát âm thanh.
+- Nút bật/tắt nhạc và hiệu ứng nằm trên đầu màn hình game.
