@@ -36,3 +36,4 @@ Room state is held in process memory; a server restart closes active rooms. Win 
 - Tên hiển thị do người chơi nhập được gửi khi bấm VÀO PHÒNG; link QR không tự tham gia với tên Khách trước khi người chơi nhập tên.
 - Tên chủ phòng được lưu trên thiết bị và cập nhật lại khi chủ phòng vào bàn.
 - Tăng phiên bản CSS/JS lên v6 để tránh cache cũ; ép tải background Tết từ `/assets/tet-background.png?v=6`.
+Trigger deploy V6.
