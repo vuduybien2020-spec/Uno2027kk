@@ -42,3 +42,9 @@ Room state is held in process memory; a server restart closes active rooms. Win 
 - Lá Wild tiếp tục dùng màu đã chọn từ trạng thái phòng do máy chủ phát.
 
 Kiểm tra đã chạy: kiểm tra cú pháp JavaScript Node cho server và app. Chưa kiểm thử đa thiết bị hoặc tải thực tế trên Railway; cần deploy và kiểm tra bằng hai điện thoại.
+
+## V9 – Bộ lá bài 3D Tết theo ảnh mẫu
+- Đã cắt và tích hợp 24 hình lá bài từ ảnh mẫu được duyệt vào `public/assets/cards/`.
+- Các lá có hình trùng khớp trong bộ mẫu sẽ hiển thị bằng ảnh 3D; những số chưa có trong ảnh mẫu vẫn dùng kiểu lá bài CSS hiện tại để không hiển thị sai số.
+- Lá Wild hiển thị dấu màu đã chọn ở góc bài sau khi người chơi chọn màu.
+- Đã tăng phiên bản cache CSS/JS lên v9.
