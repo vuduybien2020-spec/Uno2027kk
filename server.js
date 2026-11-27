@@ -11,6 +11,17 @@ const app = express();
 
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json());
+
+// Tránh điện thoại giữ app.js/admin.js cũ sau khi Railway deploy bản mới.
+app.use((req, res, next) => {
+  if (/\.(html|js|css)$/.test(req.path)) {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+  }
+  next();
+});
+
 app.use(express.static(path.join(__dirname, "public")));
 
 const server = http.createServer(app);
@@ -145,7 +156,8 @@ function publicRoomState(room) {
       host: player.host,
       connected: player.connected,
       count: player.hand.length,
-      saidUno: player.saidUno
+      saidUno: player.saidUno,
+      wins: player.wins || 0
     })),
 
     currentPlayerId: room.currentPlayerId,
@@ -180,8 +192,8 @@ function sendError(socket, message) {
 }
 
 function startGame(room) {
-  if (room.status !== "lobby") {
-    throw new Error("Ván chơi đã được bắt đầu.");
+  if (!["lobby", "finished"].includes(room.status)) {
+    throw new Error("Ván chơi hiện đang diễn ra.");
   }
 
   if (room.players.length < 2) {
@@ -275,7 +287,8 @@ app.post("/api/room/create", (req, res) => {
       connected: false,
       saidUno: false,
       socketId: null,
-      drawnId: null
+      drawnId: null,
+      wins: 0
     }],
 
     status: "lobby",
@@ -348,6 +361,25 @@ io.on("connection", (socket) => {
       return sendError(socket, "Không tìm thấy phòng.");
     }
 
+    // Nếu cùng socket gửi room:join lặp lại, chỉ xác nhận lại người chơi cũ.
+    // Không tạo thêm một ghế mới trong phòng.
+    if (socket.data.roomCode === room.code && socket.data.playerId) {
+      const existingPlayer = getPlayer(room, socket.data.playerId);
+      if (existingPlayer) {
+        existingPlayer.connected = true;
+        existingPlayer.socketId = socket.id;
+        socket.join(room.code);
+        socket.emit("room:joined", {
+          code: room.code,
+          playerId: existingPlayer.id,
+          host: existingPlayer.host
+        });
+        if (room.status === "playing") sendHand(existingPlayer);
+        broadcastRoom(room);
+        return;
+      }
+    }
+
     let player;
 
     if (
@@ -383,7 +415,8 @@ io.on("connection", (socket) => {
         connected: false,
         saidUno: false,
         socketId: null,
-        drawnId: null
+        drawnId: null,
+        wins: 0
       };
 
       room.players.push(player);
@@ -530,7 +563,8 @@ io.on("connection", (socket) => {
     if (player.hand.length === 0) {
       room.status = "finished";
       room.winner = player.id;
-      room.notice = `🎉 ${player.name} chiến thắng!`;
+      player.wins = (player.wins || 0) + 1;
+      room.notice = `🏆 ${player.name} chiến thắng! Tổng cộng ${player.wins} ván thắng!`;
 
       room.players.forEach(sendHand);
       return broadcastRoom(room);
@@ -756,6 +790,7 @@ io.on("connection", (socket) => {
     if (!room || !player || !message) return;
 
     io.to(room.code).emit("chat:message", {
+      playerId: player.id,
       name: player.name,
       message
     });
