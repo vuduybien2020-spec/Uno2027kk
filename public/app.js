@@ -1,14 +1,253 @@
-const socket=io(),$=id=>document.getElementById(id);let me=null,isHost=false,room=null,myHand=[];const emojis=["😂","👍","❤️","😱","👏","😭","🔥","🎉"],names={skip:"CẤM",reverse:"ĐẢO",draw2:"+2",wild:"WILD",draw4:"+4"};
-function toast(m){let t=$("toast");t.textContent=m;t.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display="none",2600)}
-function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-const query=new URLSearchParams(location.search);if(query.get("room"))$("code").value=query.get("room");
-$("join").onclick=()=>socket.emit("room:join",{code:$("code").value.trim().toUpperCase(),name:$("name").value.trim()||"Khách"});
-socket.on("room:joined",d=>{me=d.playerId;isHost=d.host;$("lobby").classList.add("hidden");$("table").classList.remove("hidden");if(isHost)$("start").classList.remove("hidden");toast("Đã vào phòng "+d.code)});
-socket.on("game:error",toast);socket.on("hand:state",h=>{myHand=h;renderHand()});socket.on("room:state",s=>{room=s;render()});
-function cardLabel(c){return names[c.value]||c.value}
-function render(){if(!room)return;$("players").innerHTML="";room.players.forEach(p=>{let d=document.createElement("div");d.className="seat"+(p.id===room.turn?" active":"");d.dataset.pid=p.id;d.innerHTML=`<div class="avatar">${esc(p.avatar||"🧑")}</div><div class="pname">${esc(p.name)} ${p.host?"👑":""}</div><div class="count">${p.count} lá · ${p.connected?"Online":"Offline"}</div>`;$("players").append(d)});$("turnText").textContent=room.status==="lobby"?"Đang chờ chủ phòng bắt đầu":room.status==="finished"?"🏆 Ván đã kết thúc":`Lượt của: ${room.players.find(p=>p.id===room.turn)?.name||"—"}`;$("notice").textContent=room.notice||"";$("deckCount").textContent=room.deckCount+" lá";$("activeColor").textContent=({red:"ĐỎ 🔴",yellow:"VÀNG 🟡",green:"XANH LÁ 🟢",blue:"XANH DƯƠNG 🔵"})[room.color]||"-";if(room.top){let c=$("topCard");c.className="bigcard "+room.top.color;c.textContent=cardLabel(room.top)}}
-function renderHand(){$("hand").innerHTML="";myHand.forEach(c=>{let b=document.createElement("button");b.className="card "+c.color;b.textContent=cardLabel(c);b.onclick=()=>{let color;if(c.color==="wild"){color=prompt("Chọn màu: red, yellow, green hoặc blue","red")?.toLowerCase();if(!color)return}socket.emit("card:play",{cardId:c.id,color})};$("hand").append(b)})}
-$("draw").onclick=()=>socket.emit("card:draw");$("pass").onclick=()=>socket.emit("turn:pass");$("uno").onclick=()=>socket.emit("uno:call");$("start").onclick=()=>socket.emit("game:start");$("catch").onclick=()=>{let p=room?.players.find(x=>x.id!==me&&x.count===1&&!x.saidUno);if(p)socket.emit("uno:catch",{targetId:p.id});else toast("Không có ai để bắt UNO.")};
-$("emojis").innerHTML=emojis.map(e=>`<button type="button">${e}</button>`).join("");[...$("emojis").children].forEach((b,i)=>b.onclick=()=>socket.emit("reaction:send",{emoji:emojis[i]}));
-socket.on("reaction:show",d=>{let seat=document.querySelector(`[data-pid="${d.playerId}"]`);if(!seat)return;let f=document.createElement("span");f.className="float";f.textContent=d.emoji;seat.append(f);setTimeout(()=>f.remove(),2000)});
-$("chatForm").onsubmit=e=>{e.preventDefault();socket.emit("chat:send",{message:$("chatInput").value});$("chatInput").value=""};socket.on("chat:message",m=>{let d=document.createElement("div");d.textContent=m.name+": "+m.message;$("messages").append(d);$("messages").scrollTop=$("messages").scrollHeight});
+
+const socket = io();
+const $ = (id) => document.getElementById(id);
+
+let me = null;
+let isHost = false;
+let room = null;
+let myHand = [];
+
+const emojis = ["😂", "👍", "❤️", "😱", "👏", "😭", "🔥", "🎉"];
+
+const names = {
+  skip: "CẤM",
+  reverse: "ĐẢO",
+  draw2: "+2",
+  wild: "WILD",
+  draw4: "+4"
+};
+
+function toast(message) {
+  const box = $("toast");
+  box.textContent = message;
+  box.style.display = "block";
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => {
+    box.style.display = "none";
+  }, 2600);
+}
+
+function esc(value) {
+  return String(value).replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
+}
+
+const query = new URLSearchParams(location.search);
+
+if (query.get("room")) {
+  $("code").value = query.get("room");
+}
+
+function joinRoom() {
+  const code = $("code").value.trim().toUpperCase();
+  const hostId = query.get("host");
+  const name = hostId
+    ? "Chủ phòng"
+    : ($("name").value.trim() || "Khách");
+
+  if (!code) return toast("Anh nhập mã phòng trước nhé.");
+
+  socket.emit("room:join", {
+    code,
+    name,
+    hostId: hostId || undefined
+  });
+}
+
+$("join").onclick = joinRoom;
+
+// Tự động đăng nhập chủ phòng khi Admin chuyển sang bàn chơi.
+if (query.get("room") && query.get("host")) {
+  $("name").value = "Chủ phòng";
+  joinRoom();
+}
+
+socket.on("room:joined", (data) => {
+  me = data.playerId;
+  isHost = data.host;
+
+  $("lobby").classList.add("hidden");
+  $("table").classList.remove("hidden");
+
+  if (isHost) {
+    $("start").classList.remove("hidden");
+  }
+
+  toast("Đã vào phòng " + data.code +
+    (isHost ? " · Chủ phòng" : ""));
+});
+
+socket.on("game:error", toast);
+
+socket.on("hand:state", (hand) => {
+  myHand = Array.isArray(hand) ? hand : [];
+  renderHand();
+});
+
+socket.on("room:state", (state) => {
+  room = state;
+  render();
+});
+
+function cardLabel(card) {
+  return names[card.value] || card.value;
+}
+
+function render() {
+  if (!room) return;
+
+  $("players").innerHTML = "";
+
+  room.players.forEach((player) => {
+    const seat = document.createElement("div");
+
+    seat.className =
+      "seat" +
+      (player.id === room.currentPlayerId ? " active" : "");
+
+    seat.dataset.pid = player.id;
+
+    seat.innerHTML = `
+      <div class="avatar">${esc(player.avatar || "🧑")}</div>
+      <div class="pname">
+        ${esc(player.name)} ${player.host ? "👑" : ""}
+      </div>
+      <div class="count">
+        ${player.count} lá · ${player.connected ? "Online" : "Offline"}
+      </div>
+    `;
+
+    $("players").append(seat);
+  });
+
+  const currentPlayer = room.players.find(
+    (player) => player.id === room.currentPlayerId
+  );
+
+  $("turnText").textContent =
+    room.status === "lobby"
+      ? "Đang chờ chủ phòng bắt đầu"
+      : room.status === "finished"
+        ? "🏆 Ván đã kết thúc"
+        : `Lượt của: ${currentPlayer?.name || "—"}`;
+
+  $("notice").textContent = room.notice || "";
+  $("deckCount").textContent = room.deckCount + " lá";
+
+  $("activeColor").textContent = ({
+    red: "ĐỎ 🔴",
+    yellow: "VÀNG 🟡",
+    green: "XANH LÁ 🟢",
+    blue: "XANH DƯƠNG 🔵"
+  })[room.activeColor] || "-";
+
+  if (room.top) {
+    $("topCard").className = "bigcard " + room.top.color;
+    $("topCard").textContent = cardLabel(room.top);
+  }
+}
+
+function renderHand() {
+  $("hand").innerHTML = "";
+
+  myHand.forEach((card) => {
+    const button = document.createElement("button");
+
+    button.className = "card " + card.color;
+    button.textContent = cardLabel(card);
+
+    button.onclick = () => {
+      let color;
+
+      if (card.color === "wild") {
+        color = prompt(
+          "Chọn màu: red, yellow, green hoặc blue",
+          "red"
+        )?.toLowerCase();
+
+        if (!color) return;
+      }
+
+      socket.emit("card:play", {
+        cardId: card.id,
+        color
+      });
+    };
+
+    $("hand").append(button);
+  });
+}
+
+$("draw").onclick = () => socket.emit("card:draw");
+$("pass").onclick = () => socket.emit("turn:pass");
+$("uno").onclick = () => socket.emit("uno:call");
+$("start").onclick = () => {
+  if (isHost) socket.emit("game:start");
+};
+
+$("catch").onclick = () => {
+  const player = room?.players.find(
+    (item) => item.id !== me &&
+      item.count === 1 &&
+      !item.saidUno
+  );
+
+  if (player) {
+    socket.emit("uno:catch", { targetId: player.id });
+  } else {
+    toast("Không có ai để bắt UNO.");
+  }
+};
+
+$("emojis").innerHTML = emojis
+  .map((emoji) => `<button type="button">${emoji}</button>`)
+  .join("");
+
+[...$("emojis").children].forEach((button, index) => {
+  button.onclick = () => {
+    socket.emit("reaction:send", {
+      emoji: emojis[index]
+    });
+  };
+});
+
+socket.on("reaction:show", (data) => {
+  const seat = document.querySelector(
+    `[data-pid="${data.playerId}"]`
+  );
+
+  if (!seat) return;
+
+  const floating = document.createElement("span");
+  floating.className = "float";
+  floating.textContent = data.emoji;
+
+  seat.append(floating);
+
+  setTimeout(() => floating.remove(), 2000);
+});
+
+$("chatForm").onsubmit = (event) => {
+  event.preventDefault();
+
+  socket.emit("chat:send", {
+    message: $("chatInput").value
+  });
+
+  $("chatInput").value = "";
+};
+
+socket.on("chat:message", (message) => {
+  const item = document.createElement("div");
+
+  item.textContent =
+    message.name + ": " + message.message;
+
+  $("messages").append(item);
+  $("messages").scrollTop = $("messages").scrollHeight;
+});
