@@ -116,3 +116,12 @@ body{background:#650d20 url('/assets/tet-background-clean.png') center top/cover
  .reactions button{font-size:21px;min-width:36px;min-height:36px}
  .chat-fab{right:10px;bottom:10px;width:48px;height:48px}
 }
+
+/* V9 card artwork: exact 3D Tết card faces cropped from the approved reference sheet */
+.hand-card{position:relative;overflow:visible;background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;border-radius:12px!important}
+.hand-card .card-art{display:block;width:100%;height:100%;object-fit:fill;filter:drop-shadow(0 5px 4px #24030b88);user-select:none;-webkit-user-drag:none}
+.table-center>.piles .playing-card{position:relative;overflow:visible;background:transparent!important;border:0!important;padding:0!important;box-shadow:none!important;border-radius:12px!important}
+.table-center>.piles .playing-card .card-art{display:block;width:100%;height:100%;object-fit:fill;filter:drop-shadow(0 7px 5px #001b1488)}
+.chosen-color{position:absolute;right:-7px;top:-7px;width:23px;height:23px;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 2px #f5d15d,0 2px 7px #0009;z-index:4}
+.chosen-color.red{background:#e32636}.chosen-color.yellow{background:#ffdc25}.chosen-color.green{background:#149b54}.chosen-color.blue{background:#1975d2}
+@media(max-width:700px){.hand-card{background:transparent!important}.table-center>.piles .playing-card{background:transparent!important}}
