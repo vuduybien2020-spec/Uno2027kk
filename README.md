@@ -32,7 +32,13 @@ Room state is held in process memory; a server restart closes active rooms. Win 
 - Nút bật/tắt nhạc và hiệu ứng nằm trên đầu màn hình game.
 
 
-## V6 update
-- Tên hiển thị do người chơi nhập được gửi khi bấm VÀO PHÒNG; link QR không tự tham gia với tên Khách trước khi người chơi nhập tên.
-- Tên chủ phòng được lưu trên thiết bị và cập nhật lại khi chủ phòng vào bàn.
-- Tăng phiên bản CSS/JS lên v6 để tránh cache cũ; ép tải background Tết từ `/assets/tet-background.png?v=6`.
+## V8 — cập nhật giao diện điện thoại
+- Ưu tiên màn hình dọc Android, bàn và bài được xếp theo luồng dọc.
+- Bộ chọn chibi lọc theo giới tính: nữ (long/lan/an/mai), nam (huy/nam).
+- Thanh emoji giữ một hàng ngang; emoji hiển thị tại avatar người gửi, không phủ toàn màn hình.
+- Chat mở bằng nút biểu tượng; nội dung chat hiện thành bong bóng trên avatar người gửi.
+- Bài trên tay xếp thành một hàng có cuộn ngang, không chồng lấn.
+- Nền Tết tối giản, hoa mai rơi nhẹ; hiệu ứng không chặn thao tác.
+- Lá Wild tiếp tục dùng màu đã chọn từ trạng thái phòng do máy chủ phát.
+
+Kiểm tra đã chạy: kiểm tra cú pháp JavaScript Node cho server và app. Chưa kiểm thử đa thiết bị hoặc tải thực tế trên Railway; cần deploy và kiểm tra bằng hai điện thoại.
