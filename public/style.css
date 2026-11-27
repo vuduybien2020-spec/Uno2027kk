@@ -138,3 +138,9 @@ body{background:#650d20 url('/assets/tet-background-clean.png') center top/cover
 .table-center>.piles .playing-card .card-fallback-face{font-size:clamp(20px,3vw,36px)}
 .hand-card:focus-visible,.pick:focus-visible,.action:focus-visible{outline:3px solid #fff36a;outline-offset:3px}
 @media(prefers-reduced-motion:reduce){.petal,.screen-emoji,.seat.active .avatar-wrap,.seat.is-poked .avatar-wrap{animation:none!important}}
+
+/* V12: ảnh lá bài đồng bộ, không lộ mép sprite; khách phải chủ động xác nhận vào phòng */
+.card-art{display:block;width:100%;height:100%;object-fit:fill;border-radius:9px;pointer-events:none;user-select:none}
+.playing-card{overflow:hidden;padding:0;background:transparent}
+.hand-card{flex:0 0 auto;overflow:hidden}
+#code.hidden{display:none!important}
