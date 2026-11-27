@@ -48,3 +48,16 @@ Kiểm tra đã chạy: kiểm tra cú pháp JavaScript Node cho server và app.
 - Các lá có hình trùng khớp trong bộ mẫu sẽ hiển thị bằng ảnh 3D; những số chưa có trong ảnh mẫu vẫn dùng kiểu lá bài CSS hiện tại để không hiển thị sai số.
 - Lá Wild hiển thị dấu màu đã chọn ở góc bài sau khi người chơi chọn màu.
 - Đã tăng phiên bản cache CSS/JS lên v9.
+
+
+## V11 – rà soát và sửa lỗi giao diện/luồng chơi
+- Lá bài không có ảnh 3D tương ứng vẫn có mặt bài đầy đủ theo màu, không còn chỉ hiện số/chữ trơ.
+- Chỉ cho phép người đang đến lượt và còn đúng 1 lá chưa hô UNO mới gọi UNO.
+- Chặn socket cũ tiếp tục thao tác sau khi cùng người chơi kết nối lại.
+- Nếu bộ bài thực sự hết và không thể rút thêm, tự chuyển lượt để tránh kẹt bàn.
+- Chỉ cho bắt đầu khi có ít nhất 2 người đang kết nối; trang chủ phòng cũng khóa nút tương ứng.
+- Chuẩn hóa URL QR để tránh dấu gạch chéo kép.
+- Tăng phiên bản cache CSS/JS lên V11.
+
+### Giới hạn kiểm thử
+Đã kiểm tra cú pháp JavaScript và đối chiếu các ID HTML/tài nguyên ảnh. Chưa chạy kiểm thử đa thiết bị thực tế hoặc mô phỏng toàn bộ ván qua trình duyệt; cần thử bằng ít nhất hai điện thoại sau khi Railway triển khai.
