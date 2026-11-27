@@ -1,15 +1,26 @@
 
 const socket = io();
+
 const $ = (id) => document.getElementById(id);
 
 let me = null;
 let isHost = false;
 let room = null;
 let myHand = [];
+let joined = false;
 
-const emojis = ["😂", "👍", "❤️", "😱", "👏", "😭", "🔥", "🎉"];
+const query = new URLSearchParams(location.search);
+const roomFromUrl = query.get("room");
+const hostIdFromUrl = query.get("host");
 
-const names = {
+const colors = {
+  red: "ĐỎ 🔴",
+  yellow: "VÀNG 🟡",
+  green: "XANH LÁ 🟢",
+  blue: "XANH DƯƠNG 🔵"
+};
+
+const labels = {
   skip: "CẤM",
   reverse: "ĐẢO",
   draw2: "+2",
@@ -19,15 +30,18 @@ const names = {
 
 function toast(message) {
   const box = $("toast");
+  if (!box) return alert(message);
+
   box.textContent = message;
   box.style.display = "block";
+
   clearTimeout(toast.timer);
   toast.timer = setTimeout(() => {
     box.style.display = "none";
-  }, 2600);
+  }, 3000);
 }
 
-function esc(value) {
+function escapeHTML(value) {
   return String(value).replace(/[&<>"']/g, (char) => ({
     "&": "&amp;",
     "<": "&lt;",
@@ -37,37 +51,42 @@ function esc(value) {
   })[char]);
 }
 
-const query = new URLSearchParams(location.search);
-
-if (query.get("room")) {
-  $("code").value = query.get("room");
-}
-
 function joinRoom() {
-  const code = $("code").value.trim().toUpperCase();
-  const hostId = query.get("host");
+  if (joined) return;
+
+  const code = roomFromUrl || $("code").value.trim();
+  const hostId = hostIdFromUrl;
+
   const name = hostId
     ? "Chủ phòng"
     : ($("name").value.trim() || "Khách");
 
-  if (!code) return toast("Anh nhập mã phòng trước nhé.");
+  if (!code) {
+    toast("Anh hãy nhập mã phòng.");
+    return;
+  }
 
   socket.emit("room:join", {
-    code,
+    code: code.toUpperCase(),
     name,
     hostId: hostId || undefined
   });
 }
 
-$("join").onclick = joinRoom;
+$("join").addEventListener("click", joinRoom);
 
-// Tự động đăng nhập chủ phòng khi Admin chuyển sang bàn chơi.
-if (query.get("room") && query.get("host")) {
-  $("name").value = "Chủ phòng";
-  joinRoom();
+// Tự vào phòng khi chủ phòng được chuyển từ Admin sang bàn chơi.
+if (roomFromUrl) {
+  $("code").value = roomFromUrl;
+
+  if (hostIdFromUrl) {
+    $("name").value = "Chủ phòng";
+    joinRoom();
+  }
 }
 
 socket.on("room:joined", (data) => {
+  joined = true;
   me = data.playerId;
   isHost = data.host;
 
@@ -78,27 +97,28 @@ socket.on("room:joined", (data) => {
     $("start").classList.remove("hidden");
   }
 
-  toast("Đã vào phòng " + data.code +
-    (isHost ? " · Chủ phòng" : ""));
+  toast(isHost
+    ? "Chủ phòng đã vào bàn chơi!"
+    : "Bạn đã vào phòng thành công!");
 });
 
-socket.on("game:error", toast);
+socket.on("game:error", (message) => {
+  toast(message);
+});
 
+// Nhận bài riêng của người chơi từ máy chủ.
 socket.on("hand:state", (hand) => {
   myHand = Array.isArray(hand) ? hand : [];
   renderHand();
 });
 
+// Nhận trạng thái bàn chơi.
 socket.on("room:state", (state) => {
   room = state;
-  render();
+  renderRoom();
 });
 
-function cardLabel(card) {
-  return names[card.value] || card.value;
-}
-
-function render() {
+function renderRoom() {
   if (!room) return;
 
   $("players").innerHTML = "";
@@ -106,26 +126,29 @@ function render() {
   room.players.forEach((player) => {
     const seat = document.createElement("div");
 
-    seat.className =
-      "seat" +
-      (player.id === room.currentPlayerId ? " active" : "");
+    seat.className = "seat";
+    if (player.id === room.currentPlayerId) {
+      seat.classList.add("active");
+    }
 
     seat.dataset.pid = player.id;
 
     seat.innerHTML = `
-      <div class="avatar">${esc(player.avatar || "🧑")}</div>
+      <div class="avatar">${escapeHTML(player.avatar || "👤")}</div>
       <div class="pname">
-        ${esc(player.name)} ${player.host ? "👑" : ""}
+        ${escapeHTML(player.name)}
+        ${player.host ? "👑" : ""}
       </div>
       <div class="count">
-        ${player.count} lá · ${player.connected ? "Online" : "Offline"}
+        ${player.count} lá ·
+        ${player.connected ? "Online" : "Offline"}
       </div>
     `;
 
-    $("players").append(seat);
+    $("players").appendChild(seat);
   });
 
-  const currentPlayer = room.players.find(
+  const current = room.players.find(
     (player) => player.id === room.currentPlayerId
   );
 
@@ -133,22 +156,23 @@ function render() {
     room.status === "lobby"
       ? "Đang chờ chủ phòng bắt đầu"
       : room.status === "finished"
-        ? "🏆 Ván đã kết thúc"
-        : `Lượt của: ${currentPlayer?.name || "—"}`;
+        ? "🏆 Ván chơi đã kết thúc"
+        : "Lượt của: " + (current?.name || "—");
 
   $("notice").textContent = room.notice || "";
-  $("deckCount").textContent = room.deckCount + " lá";
-
-  $("activeColor").textContent = ({
-    red: "ĐỎ 🔴",
-    yellow: "VÀNG 🟡",
-    green: "XANH LÁ 🟢",
-    blue: "XANH DƯƠNG 🔵"
-  })[room.activeColor] || "-";
+  $("deckCount").textContent = "Bộ rút: " + room.deckCount;
+  $("activeColor").textContent = colors[room.activeColor] || "-";
 
   if (room.top) {
     $("topCard").className = "bigcard " + room.top.color;
-    $("topCard").textContent = cardLabel(room.top);
+    $("topCard").textContent =
+      labels[room.top.value] || room.top.value;
+  }
+
+  if (isHost && room.status === "lobby") {
+    $("start").classList.remove("hidden");
+  } else {
+    $("start").classList.add("hidden");
   }
 }
 
@@ -158,68 +182,105 @@ function renderHand() {
   myHand.forEach((card) => {
     const button = document.createElement("button");
 
+    button.type = "button";
     button.className = "card " + card.color;
-    button.textContent = cardLabel(card);
+    button.textContent = labels[card.value] || card.value;
 
-    button.onclick = () => {
-      let color;
+    button.addEventListener("click", () => {
+      playCard(card);
+    });
 
-      if (card.color === "wild") {
-        color = prompt(
-          "Chọn màu: red, yellow, green hoặc blue",
-          "red"
-        )?.toLowerCase();
-
-        if (!color) return;
-      }
-
-      socket.emit("card:play", {
-        cardId: card.id,
-        color
-      });
-    };
-
-    $("hand").append(button);
+    $("hand").appendChild(button);
   });
 }
 
-$("draw").onclick = () => socket.emit("card:draw");
-$("pass").onclick = () => socket.emit("turn:pass");
-$("uno").onclick = () => socket.emit("uno:call");
-$("start").onclick = () => {
-  if (isHost) socket.emit("game:start");
-};
+function playCard(card) {
+  if (!room || room.status !== "playing") {
+    return toast("Ván chơi chưa bắt đầu.");
+  }
 
-$("catch").onclick = () => {
-  const player = room?.players.find(
-    (item) => item.id !== me &&
-      item.count === 1 &&
-      !item.saidUno
+  if (room.currentPlayerId !== me) {
+    return toast("Chưa đến lượt anh.");
+  }
+
+  let color;
+
+  if (card.color === "wild") {
+    color = prompt(
+      "Chọn màu: red, yellow, green hoặc blue",
+      "red"
+    );
+
+    if (!["red", "yellow", "green", "blue"].includes(color)) {
+      return toast("Màu không hợp lệ.");
+    }
+  }
+
+  socket.emit("card:play", {
+    cardId: card.id,
+    color
+  });
+}
+
+// Nút bắt đầu ván dành cho chủ phòng.
+$("start").addEventListener("click", () => {
+  if (!isHost) return toast("Chỉ chủ phòng mới được bắt đầu.");
+
+  socket.emit("game:start");
+});
+
+// Các nút chơi bài.
+$("draw").addEventListener("click", () => {
+  socket.emit("card:draw");
+});
+
+$("pass").addEventListener("click", () => {
+  socket.emit("turn:pass");
+});
+
+$("uno").addEventListener("click", () => {
+  socket.emit("uno:call");
+});
+
+$("catch").addEventListener("click", () => {
+  if (!room) return;
+
+  const target = room.players.find(
+    (player) =>
+      player.id !== me &&
+      player.count === 1 &&
+      !player.saidUno
   );
 
-  if (player) {
-    socket.emit("uno:catch", { targetId: player.id });
-  } else {
-    toast("Không có ai để bắt UNO.");
+  if (!target) {
+    return toast("Không có người chơi nào để bắt UNO.");
   }
-};
 
-$("emojis").innerHTML = emojis
-  .map((emoji) => `<button type="button">${emoji}</button>`)
-  .join("");
+  socket.emit("uno:catch", {
+    targetId: target.id
+  });
+});
 
-[...$("emojis").children].forEach((button, index) => {
-  button.onclick = () => {
+// Biểu tượng cảm xúc.
+const emojis = ["😂", "👍", "❤️", "😱", "👏", "😭", "🔥", "🎉"];
+
+$("emojis").innerHTML = emojis.map(
+  (emoji) => `<button type="button">${emoji}</button>`
+).join("");
+
+Array.from($("emojis").children).forEach((button, index) => {
+  button.addEventListener("click", () => {
     socket.emit("reaction:send", {
       emoji: emojis[index]
     });
-  };
+  });
 });
 
+// Hiển thị cảm xúc trên vị trí người chơi.
 socket.on("reaction:show", (data) => {
-  const seat = document.querySelector(
-    `[data-pid="${data.playerId}"]`
-  );
+  const seat = Array.from(
+    $("players").children
+  ).find((element) => element.dataset.pid === data.playerId);
 
   if (!seat) return;
 
@@ -227,27 +288,31 @@ socket.on("reaction:show", (data) => {
   floating.className = "float";
   floating.textContent = data.emoji;
 
-  seat.append(floating);
+  seat.appendChild(floating);
 
   setTimeout(() => floating.remove(), 2000);
 });
 
-$("chatForm").onsubmit = (event) => {
+// Chat.
+$("chatForm").addEventListener("submit", (event) => {
   event.preventDefault();
 
-  socket.emit("chat:send", {
-    message: $("chatInput").value
-  });
+  const message = $("chatInput").value.trim();
+  if (!message) return;
 
+  socket.emit("chat:send", { message });
   $("chatInput").value = "";
-};
+});
 
-socket.on("chat:message", (message) => {
+socket.on("chat:message", (data) => {
   const item = document.createElement("div");
 
-  item.textContent =
-    message.name + ": " + message.message;
+  item.textContent = data.name + ": " + data.message;
 
-  $("messages").append(item);
+  $("messages").appendChild(item);
   $("messages").scrollTop = $("messages").scrollHeight;
+});
+
+socket.on("connect_error", () => {
+  toast("Không kết nối được máy chủ. Hãy tải lại trang.");
 });
