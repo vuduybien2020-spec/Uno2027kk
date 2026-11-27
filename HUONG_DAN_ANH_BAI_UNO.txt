@@ -1,0 +1,7 @@
+ĐÃ TÍCH HỢP ẢNH BÀI UNO TẾT
+
+- Ảnh mặt bài nằm tại public/assets/cards/.
+- Bài trên tay và lá bài bỏ ở giữa bàn lấy ảnh PNG theo tên màu-loại.
+- Ví dụ: red-7.png, blue-draw2.png, wild-wild.png, wild-draw4.png.
+- Logic chia bài, luật chơi, Socket.IO và phòng chơi được giữ nguyên.
+- Đã tăng phiên bản cache CSS/JS lên v12 để trình duyệt tải mã mới.
