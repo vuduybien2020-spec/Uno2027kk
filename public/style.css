@@ -22,3 +22,8 @@ body:before,body:after{content:'🌸　🏮　✿　🌼';position:fixed;z-index
 .action{font-family:'Baloo 2';font-size:clamp(13px,1.4vw,20px);border:3px solid #ffd76a;box-shadow:0 5px 0 #3b0615,0 0 14px #ffc84a55;padding:10px 22px}.draw{background:linear-gradient(#35baff,#0066b7)}.pass{background:linear-gradient(#b34bdf,#5d1aa5)}.uno{background:linear-gradient(#ff5138,#b50020)}
 .reactions{background:linear-gradient(#6c1930dd,#370a1aee);border:2px solid #d89b48;box-shadow:0 4px 15px #20020b}.reactions button{font-size:clamp(20px,2.5vw,34px)}
 @media(max-width:700px){.avatar-wrap{width:55px;height:55px}.wins{right:-22px;width:29px;height:29px}.table-area{border-width:8px}.hand-card{width:53px;height:81px;margin-left:-17px;border-width:4px}.seat-count{font-size:9px}}
+
+/* Chibi portraits and final action styling */
+.avatar-img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}.seat .avatar-wrap{overflow:visible}.seat .avatar-img{border-radius:50%;border:2px solid #ffe5a0;box-shadow:inset 0 0 0 2px #7a1729}.action.catch{background:linear-gradient(#e4a12c,#9b4d13);border-color:#ffe18a}.seat.active .seat-name{background:linear-gradient(#b32642,#641026);box-shadow:0 0 12px #ffe56c}
+@media(max-width:700px){.avatar-img{object-fit:cover}.controls{flex-wrap:wrap}.action.catch{padding:8px 9px;font-size:10px}}
+@media(orientation:landscape) and (max-height:560px){.seat.p6{left:12%;bottom:0}}
