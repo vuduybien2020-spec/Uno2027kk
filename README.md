@@ -68,3 +68,10 @@ Kiểm tra đã chạy: kiểm tra cú pháp JavaScript Node cho server và app.
 - Mỗi khách quét QR phải tự nhập tên, chọn giới tính/chibi và bấm Vào phòng; không tự tham gia khi Socket.IO vừa kết nối.
 - Không tự điền tên cũ từ phiên trình duyệt; vẫn giữ lựa chọn giới tính/chibi để thao tác nhanh.
 - Khi đã vào thành công, tự kết nối lại sẽ khôi phục phiên chơi hiện tại.
+
+
+## V14 – sửa luồng vào phòng
+- QR đọc mã từ tham số `room` hoặc `code`, hiển thị mã đã nhận và khóa ô mã.
+- Nhập mã thủ công không còn bắt tải lại trang; nút VÀO PHÒNG gửi yêu cầu ngay sau khi xác nhận tên/chibi.
+- Tăng phiên bản app.js/style.css để tránh trình duyệt dùng cache cũ.
+- Thêm hướng dẫn rõ trên màn hình vào phòng.
