@@ -125,3 +125,16 @@ body{background:#650d20 url('/assets/tet-background-clean.png') center top/cover
 .chosen-color{position:absolute;right:-7px;top:-7px;width:23px;height:23px;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 2px #f5d15d,0 2px 7px #0009;z-index:4}
 .chosen-color.red{background:#e32636}.chosen-color.yellow{background:#ffdc25}.chosen-color.green{background:#149b54}.chosen-color.blue{background:#1975d2}
 @media(max-width:700px){.hand-card{background:transparent!important}.table-center>.piles .playing-card{background:transparent!important}}
+
+
+/* V11 audit fix: always render a complete card face when an exact 3D asset is unavailable. */
+.hand-card .card-fallback-face,.table-center>.piles .playing-card .card-fallback-face{display:flex;width:100%;height:100%;box-sizing:border-box;align-items:center;justify-content:center;border:4px solid #fff;border-radius:12px;color:#fff;font-weight:1000;text-shadow:0 3px 4px #0009,0 0 2px #000;background:linear-gradient(145deg,#555,#111);box-shadow:inset 0 0 0 3px #f5d36b,0 5px 0 #aaa,0 9px 12px #0007;overflow:hidden}
+.card-fallback-face.red{background:radial-gradient(circle at 35% 25%,#ff7777,#d20c2d 70%)}
+.card-fallback-face.yellow{background:radial-gradient(circle at 35% 25%,#fff39b,#e7a900 72%);color:#64200c;text-shadow:0 2px 2px #fff8}
+.card-fallback-face.green{background:radial-gradient(circle at 35% 25%,#8bff9e,#07833d 72%)}
+.card-fallback-face.blue{background:radial-gradient(circle at 35% 25%,#8bdcff,#0757bb 72%)}
+.card-fallback-face.wild{background:conic-gradient(#e32636 0 25%,#ffdc25 0 50%,#149b54 0 75%,#1975d2 0)}
+.hand-card .card-fallback-face{font-size:clamp(14px,3.8vw,22px)}
+.table-center>.piles .playing-card .card-fallback-face{font-size:clamp(20px,3vw,36px)}
+.hand-card:focus-visible,.pick:focus-visible,.action:focus-visible{outline:3px solid #fff36a;outline-offset:3px}
+@media(prefers-reduced-motion:reduce){.petal,.screen-emoji,.seat.active .avatar-wrap,.seat.is-poked .avatar-wrap{animation:none!important}}
