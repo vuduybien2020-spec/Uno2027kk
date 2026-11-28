@@ -234,3 +234,98 @@ body{background:#650d20 url('/assets/tet-background-clean.png') center top/cover
   user-select:none;
   -webkit-user-drag:none;
 }
+
+
+/* V9: màu Wild đã chọn hiển thị trực tiếp trên lá bài ở giữa bàn */
+#discardPile{position:relative}
+#discardPile .wild-chosen-color{position:absolute;z-index:3;left:3px;right:3px;bottom:4px;display:flex;align-items:center;justify-content:center;min-height:22px;border:1.5px solid #fff;border-radius:7px;color:#fff;font:900 9px/1.1 'Baloo 2',sans-serif;letter-spacing:.2px;text-shadow:0 1px 3px #000;box-shadow:0 2px 6px #0008;pointer-events:none}
+#discardPile .wild-chosen-color.red{background:#d71932}
+#discardPile .wild-chosen-color.yellow{background:#e6b900;color:#201500;text-shadow:none}
+#discardPile .wild-chosen-color.green{background:#087d42}
+#discardPile .wild-chosen-color.blue{background:#145bb5}
+#discardPile[data-chosen-color] .card-art{filter:saturate(.82)}
+
+/* Pháo hoa nằm trên nền popup nhưng không che nội dung/nút bấm */
+.modal-card{position:relative;z-index:32}
+
+/* UNO TET 2027 — emoji lớn phía trên avatar và số lá còn lại nổi bật */
+.seat-count{
+  display:inline-block;
+  margin:4px auto 0;
+  padding:3px 10px;
+  border:1px solid #f7d66c;
+  border-radius:14px;
+  background:linear-gradient(180deg,#103f30ee,#06281fee);
+  color:#fff4c9;
+  font-size:clamp(14px,1.45vw,19px)!important;
+  line-height:1.25;
+  font-weight:900!important;
+  text-shadow:0 1px 2px #000;
+  box-shadow:0 2px 7px #0006;
+}
+.bubble.bubble-emoji{
+  min-width:0;
+  max-width:none;
+  padding:5px 9px;
+  font-size:clamp(34px,5vw,58px)!important;
+  line-height:1.05;
+  white-space:nowrap;
+  background:#fff8e8ee;
+  border:2px solid #ffd65e;
+  box-shadow:0 5px 18px #16020aaa,0 0 15px #ffe66b99;
+}
+@media(max-width:700px){
+  .seat-count{font-size:clamp(13px,3.5vw,17px)!important;padding:2px 7px;margin-top:3px}
+  .bubble.bubble-emoji{font-size:clamp(32px,9vw,48px)!important}
+}
+
+/* Bảng xếp hạng ngang cố định ở phần đầu bàn chơi */
+.game-leaderboard{
+  position:relative;z-index:6;
+  display:flex;align-items:center;gap:10px;
+  min-height:48px;margin:10px 4px 0;padding:7px 12px;
+  border:2px solid #e9bd55;border-radius:16px;
+  background:linear-gradient(105deg,#5b1021ee,#851b2fee 55%,#54101fee);
+  box-shadow:0 4px 14px #16020a66,inset 0 1px 0 #fff4bd55;
+  color:#ffe9a9;
+}
+.game-leaderboard-title{
+  flex:0 0 auto;font:900 12px 'Baloo 2',sans-serif;
+  letter-spacing:.5px;color:#ffe27b;white-space:nowrap;
+}
+.game-leaderboard-list{
+  display:flex;align-items:center;gap:7px;flex:1;min-width:0;
+  overflow-x:auto;overflow-y:hidden;scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+.game-leaderboard-list::-webkit-scrollbar{display:none}
+.rank-chip{
+  flex:0 0 auto;display:flex;align-items:center;gap:6px;
+  max-width:190px;padding:5px 9px;border:1px solid #f3d37a88;
+  border-radius:999px;background:linear-gradient(180deg,#fff0bd22,#18050d55);
+  color:#fff4d0;font-size:11px;line-height:1.2;white-space:nowrap;
+}
+.rank-number{
+  display:grid;place-items:center;width:20px;height:20px;border-radius:50%;
+  background:linear-gradient(#ffe98e,#d99a2c);color:#641226;font-weight:1000;
+}
+.rank-1 .rank-number{background:linear-gradient(#fff3a8,#e7ad28);box-shadow:0 0 9px #ffe46c88}
+.rank-name{max-width:105px;overflow:hidden;text-overflow:ellipsis}
+.rank-wins{color:#ffe27b;font-weight:900}
+.rank-empty{font-size:11px;color:#ffe9b5;white-space:nowrap}
+@media(min-width:701px){
+  .seats{top:100px}
+  .table-area{top:25%}
+}
+@media(max-width:700px){
+  .game-leaderboard{order:0;min-height:42px;margin:2px 0 0;padding:5px 7px;gap:7px;border-radius:12px}
+  .game-leaderboard-title{font-size:10px}
+  .game-leaderboard-list{gap:5px}
+  .rank-chip{padding:4px 7px;gap:4px;font-size:10px}
+  .rank-number{width:17px;height:17px}
+  .rank-name{max-width:76px}
+}
+@media(orientation:landscape) and (max-height:560px) and (min-width:701px){
+  .seats{top:82px}
+  .table-area{top:20%}
+}
