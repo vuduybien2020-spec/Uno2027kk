@@ -381,3 +381,56 @@ body{background:#650d20 url('/assets/tet-background-clean.png') center top/cover
 .new-year-greeting span{display:block;font-size:clamp(18px,3vw,34px)}
 .new-year-greeting b{display:block;font-size:clamp(23px,3.7vw,42px);color:#fff0b2}
 @media(max-width:700px){.new-year-greeting{margin-bottom:5px;padding:0 4px 4px;letter-spacing:.7px}.new-year-greeting span{font-size:clamp(17px,5vw,25px)}.new-year-greeting b{font-size:clamp(22px,6vw,31px)}}
+
+
+/* UNO Tet: compact single-screen composition */
+.admin-link{display:inline-flex;align-items:center;justify-content:center;padding:9px 17px;border-radius:22px;background:linear-gradient(180deg,#ffe58a,#d99a32);border:2px solid #fff0b0;color:#651127!important;text-decoration:none;box-shadow:0 3px 0 #7b321d;font-weight:900}
+.game{height:calc(100dvh - 58px);min-height:520px;padding:7px 10px;box-sizing:border-box}
+.game-heading{min-height:42px;gap:8px}
+.game-heading .brand{font-size:clamp(17px,2.1vw,24px)}
+.room-caption{font-size:9px}
+.head-tools{display:flex;align-items:center;gap:6px;flex-wrap:nowrap}
+.online-pill{padding:6px 9px;font-size:10px}
+.sound-toggle,.rank-toggle{padding:6px 9px;font-size:11px}
+.table-area{top:14%;left:13%;right:13%;height:59%;box-sizing:border-box}
+.table-center{gap:10px}
+.table-decor{position:absolute;z-index:1;top:50%;transform:translateY(-50%);width:clamp(64px,9vw,112px);height:clamp(64px,9vw,112px);border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:radial-gradient(circle,#fff8dc 0 53%,#d99c3e 55% 63%,#fff0bd 66%);border:3px solid #f6d77a;box-shadow:0 4px 9px #00291d99;color:#6c1c20;font-size:clamp(8px,1vw,11px);font-weight:900;text-align:center}
+.table-decor span{font-size:clamp(15px,2.2vw,25px);line-height:1.2}
+.jam-plate{left:5%}
+.banh-plate{right:5%}
+.banh-chung{width:35px;height:32px!important;display:grid;place-items:center;background:linear-gradient(135deg,#8ac44a,#286b2b);border:3px solid #f3df8c;border-radius:5px;color:#fff4ad;transform:rotate(8deg);font-size:17px!important;box-shadow:inset 0 0 0 2px #4a9c36}
+.fireworks-trigger{position:absolute;z-index:8;top:5px;left:50%;transform:translateX(-50%);border:1px solid #ffe28a;border-radius:50%;width:38px;height:38px;background:linear-gradient(#ffe58a,#c9852c);font-size:21px;box-shadow:0 0 14px #ffd85c88;cursor:pointer}
+.fireworks-canvas{position:fixed;inset:0;width:100vw;height:100dvh;z-index:30;pointer-events:none}
+.swallows{position:absolute;inset:0 0 auto;height:25%;overflow:hidden;pointer-events:none;z-index:1}
+.swallows i{position:absolute;top:20%;left:-8%;font-style:normal;font-size:31px;color:#fff1c5;text-shadow:0 2px 4px #24030c;animation:swallowFly 13s linear infinite}
+.swallows i:nth-child(2){top:48%;animation-duration:16s;animation-delay:-5s;font-size:23px}
+.swallows i:nth-child(3){top:8%;animation-duration:18s;animation-delay:-9s;font-size:27px}
+.swallows i:nth-child(4){top:62%;animation-duration:14s;animation-delay:-3s;font-size:20px}
+@keyframes swallowFly{0%{left:-10%;transform:translateY(0) scaleX(1)}45%{transform:translateY(-18px) scaleX(1)}50%{transform:translateY(-12px) scaleX(-1)}100%{left:110%;transform:translateY(8px) scaleX(-1)}}
+@media(max-width:700px){
+ .topbar{height:46px;padding:0 10px}.logo{font-size:19px}
+ .game{height:calc(100dvh - 46px);min-height:560px;padding:5px}
+ .game-heading{align-items:flex-start}.game-heading>div:first-child{max-width:34%}
+ .game-heading .brand{font-size:16px}.room-caption{font-size:8px;letter-spacing:0}
+ .head-tools{gap:3px}.online-pill{font-size:8px;padding:5px}.sound-toggle,.rank-toggle{font-size:9px;padding:5px 6px}
+ .table-area{top:17%;left:4%;right:4%;height:49%;border-width:8px}
+ .table-decor{width:60px;height:60px;border-width:2px;top:55%}.table-decor span{font-size:16px}
+ .jam-plate{left:2%}.banh-plate{right:2%}
+ .deck-card,.playing-card{width:53px;height:79px;border-width:4px}
+ .piles{gap:22px}.table-center{gap:8px}
+ .turn-pill{font-size:12px;padding:5px 13px}.notice{font-size:10px}
+ .seats{inset:4px}.seat{width:82px}.avatar-wrap{width:52px;height:52px;font-size:31px}
+ .seat.p1{left:12%}.seat.p2{left:40%}.seat.p3{right:12%}
+ .seat.p4,.seat.p5{top:43%}.seat.p6{left:39%}
+ .wins{width:30px;height:30px;right:-26px;font-size:9px}.wins b{font-size:10px}
+ .seat-name{font-size:9px;padding:1px 4px}.seat-count{font-size:9px}
+ .my-area{left:2%;right:2%;bottom:5px}.my-title{font-size:11px}
+ .hand-wrap{padding:7px 1px 10px}.hand-card{width:clamp(39px,10vw,55px);height:clamp(63px,16vw,82px);margin-left:-13px}
+ .controls{gap:5px}.action{padding:8px 10px;font-size:10px}
+ .reactions{margin:5px auto;padding:4px 8px;gap:5px}.reactions button{font-size:18px}
+ .fireworks-trigger{top:44px;width:31px;height:31px;font-size:17px}
+}
+
+/* Reset scores control */
+.reset-scores{border:1px solid #ffd46b;border-radius:22px;background:linear-gradient(180deg,#a92d38,#701326);color:#fff0bd;padding:7px 10px;font-size:10px;font-weight:900;white-space:nowrap;box-shadow:0 2px 0 #3b0712}.reset-scores[hidden]{display:none!important}.reset-scores:active{transform:scale(.96)}.reset-scores:disabled{opacity:.55}
+@media(max-width:700px){.reset-scores{font-size:9px;padding:5px 7px}}
