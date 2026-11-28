@@ -495,3 +495,29 @@ body:has(#game:not(.hidden)) .topbar{display:none!important}
  .fireworks-canvas{z-index:30}
 }
 @media(max-width:380px) and (orientation:portrait){.seats{grid-auto-rows:minmax(68px,auto);max-height:158px}.table-area{min-height:175px}.avatar-wrap{width:39px;height:39px}}
+
+/* V13: toolbar stays in one horizontal row; Tet food plates sit larger inside the table */
+.game-heading{width:100%;}
+.head-tools{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-between!important;flex-wrap:nowrap!important;width:100%!important;gap:clamp(3px,1vw,8px)!important;}
+.head-tools>*{flex:0 0 auto!important;}
+.online-pill{margin:0!important;white-space:nowrap!important;}
+.table-area{overflow:visible!important;}
+.table-decor{top:61%!important;width:clamp(88px,25vw,132px)!important;max-height:none!important;height:auto!important;aspect-ratio:1/1!important;z-index:4!important;}
+.jam-plate{left:3%!important;right:auto!important;}
+.banh-plate{right:3%!important;left:auto!important;}
+.table-decor img{width:100%!important;height:100%!important;object-fit:contain!important;}
+@media(max-width:700px) and (orientation:portrait){
+ .head-tools{flex-direction:row!important;justify-content:space-between!important;gap:3px!important;}
+ .home-icon,.rank-toggle,.sound-toggle.icon-toggle,.fireworks-trigger,.reset-scores.icon-reset{width:clamp(29px,8vw,34px)!important;height:clamp(29px,8vw,34px)!important;min-width:clamp(29px,8vw,34px)!important;font-size:16px!important;}
+ .online-pill{font-size:8px!important;padding:4px 5px!important;}
+ .table-area{min-height:220px!important;max-height:39vh!important;}
+ .table-decor{width:clamp(88px,25vw,112px)!important;top:62%!important;}
+ .jam-plate{left:2%!important;}
+ .banh-plate{right:2%!important;}
+}
+@media(max-width:360px) and (orientation:portrait){
+ .head-tools{gap:2px!important;}
+ .home-icon,.rank-toggle,.sound-toggle.icon-toggle,.fireworks-trigger,.reset-scores.icon-reset{width:27px!important;height:27px!important;min-width:27px!important;font-size:14px!important;}
+ .online-pill{font-size:7px!important;padding:3px!important;}
+ .table-decor{width:82px!important;}
+}
